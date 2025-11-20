@@ -1,11 +1,17 @@
 import express from "express";
-import { userController } from "../controllers/user.controller.js";
+import routerAuth from "./user/user-auth.route.js";
+import { protectRoute } from "../middleware/auth.middleware.js";
+import { checkRole } from "../middleware/checkRole.midlleware.js";
+import routerCart from "./user/cart.route.js";
+import routerOrder from "./user/order.route.js";
+const routerUser = express.Router();
 
-const router = express.Router();
+routerUser.use("/auth", routerAuth);
 
-router.get("/", userController.getAll);
-router.get("/:id", userController.getById);
-router.post("/", userController.create);
-router.delete("/:id", userController.delete);
+routerUser.use(protectRoute);
+routerUser.use("/carts", routerCart);
+routerUser.use("/orders", routerOrder);
 
-export default router;
+// routerUser.use(protectRoute);
+// router.use("/", checkRole("CUSTOMER") )
+export default routerUser;

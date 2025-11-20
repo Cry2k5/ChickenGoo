@@ -2,23 +2,23 @@ import jwt from "jsonwebtoken";
 import prisma from "../configs/prisma.js";
 import { config } from "../configs/env.js";
 
+/**
+ * Middleware xác thực JWT.
+ * Nếu hợp lệ → gán req.user = { id, name, phone, email, role }
+ */
 export const protectRoute = async (req, res, next) => {
   try {
-    let token = null;
+    let token;
+    console.log("ProtectRoute middleware called");
 
     // 1. Lấy token từ header Authorization: Bearer <token>
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
+    if (req.headers.authorization?.startsWith("Bearer")) {
       token = req.headers.authorization.split(" ")[1];
-      console.log(token);
     }
 
-    // 2. Nếu header không có → lấy từ cookie
+    // 2. Nếu không có header → lấy từ cookie
     if (!token && req.cookies?.jwt) {
       token = req.cookies.jwt;
-      console.log(token);
     }
 
     // 3. Không có token → chưa đăng nhập
