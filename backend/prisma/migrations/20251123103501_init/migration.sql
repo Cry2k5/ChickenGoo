@@ -103,6 +103,7 @@ CREATE TABLE "orders" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
     "branch_id" INTEGER NOT NULL,
+    "driver_id" INTEGER,
     "total_amount" INTEGER NOT NULL,
     "status" "statusOrder" NOT NULL DEFAULT 'PENDING',
     "payment_method" "paymentMethod" NOT NULL,
@@ -112,17 +113,6 @@ CREATE TABLE "orders" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "orders_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "order_drivers" (
-    "id" SERIAL NOT NULL,
-    "order_id" INTEGER NOT NULL,
-    "driver_id" INTEGER NOT NULL,
-    "quantity" INTEGER NOT NULL,
-    "price" DOUBLE PRECISION NOT NULL,
-
-    CONSTRAINT "order_drivers_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -198,9 +188,6 @@ CREATE INDEX "users_createdAt_idx" ON "users"("createdAt");
 CREATE INDEX "users_role_name_idx" ON "users"("role", "name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "branches_userId_key" ON "branches"("userId");
-
--- CreateIndex
 CREATE INDEX "branches_name_idx" ON "branches"("name");
 
 -- CreateIndex
@@ -220,9 +207,6 @@ CREATE UNIQUE INDEX "drivers_phone_key" ON "drivers"("phone");
 
 -- CreateIndex
 CREATE INDEX "orders_status_createdAt_idx" ON "orders"("status", "createdAt");
-
--- CreateIndex
-CREATE UNIQUE INDEX "order_drivers_order_id_driver_id_key" ON "order_drivers"("order_id", "driver_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "order_items_order_id_product_id_key" ON "order_items"("order_id", "product_id");
@@ -264,10 +248,7 @@ ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_fkey" FOREIGN KEY ("user_id"
 ALTER TABLE "orders" ADD CONSTRAINT "orders_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "branches"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "order_drivers" ADD CONSTRAINT "order_drivers_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "order_drivers" ADD CONSTRAINT "order_drivers_driver_id_fkey" FOREIGN KEY ("driver_id") REFERENCES "drivers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "orders" ADD CONSTRAINT "orders_driver_id_fkey" FOREIGN KEY ("driver_id") REFERENCES "drivers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

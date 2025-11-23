@@ -1,79 +1,124 @@
 import prisma from "../configs/prisma.js";
 
 export const orderService = {
-  // Tạo đơn hàng từ cart
-  createOrderFromCart: async (userId, data) => {
-    const { paymentMethod, deliveryAddress, deliveryPhone } = data;
+  createOrder: async (userId, cart, body) => {
+    const { paymentMethod, deliveryAddress, deliveryPhone } = body;
 
-    // Lấy cart của user
-    const cart = await prisma.cart.findFirst({
-      where: { userId },
-      include: {
-        cartItem: {
-          include: { product: true },
-        },
-      },
-    });
+    // Convert cart items -> order items
+    const items = cart.cartItem.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      price: item.price, // lấy giá từ CartItem
+    }));
 
-    if (!cart || cart.cartItem.length === 0) {
-      throw new Error("Cart is empty");
-    }
+    // Tính tổng tiền từ cart luôn, không cần map lại
+    const totalAmount = cart.totalAmount;
 
-    // Tính tổng tiền
-    let totalAmount = 0;
-    for (const item of cart.cartItem) {
-      totalAmount += item.quantity * item.product.price;
-    }
-
-    // Tạo đơn hàng
+    // Tạo order
     const order = await prisma.order.create({
       data: {
+        userId,
         branchId: cart.branchId,
         totalAmount,
         paymentMethod,
         deliveryAddress,
         deliveryPhone,
         orderItem: {
-          create: cart.cartItem.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.product.price,
-          })),
+          create: items,
         },
+      },
+      include: {
+        orderItem: true,
       },
     });
 
-    // Xóa cart sau khi tạo đơn
-    await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
-    await prisma.cart.delete({ where: { id: cart.id } });
+    // Xóa cart sau khi tạo order
+    await prisma.cartItem.deleteMany({
+      where: { cartId: cart.id },
+    });
+
+    await prisma.cart.delete({
+      where: { id: cart.id },
+    });
 
     return order;
   },
 
-  getAll: async () => {
-    return prisma.order.findMany({
+  getOrdersByUser: async (userId) => {
+    return await prisma.order.findMany({
+      where: { userId },
+      include: {
+        orderItem: {
+          include: { product: true },
+        },
+        branch: true,
+      },
       orderBy: { createdAt: "desc" },
     });
   },
 
-  getById: async (id) => {
-    return prisma.order.findUnique({
-      where: { id: Number(id) },
+  getOrderDetail: async (orderId, userId) => {
+    return await prisma.order.findFirst({
+      where: { id: orderId, userId },
       include: {
-        orderItem: true,
+        orderItem: {
+          include: { product: true },
+        },
         branch: true,
       },
     });
   },
 
-  updateStatus: async (id, status) => {
-    return prisma.order.update({
-      where: { id: Number(id) },
-      data: { status },
-    });
-  },
+  // Cập nhật trạng thái đơn hàng
+  async updateStatus(orderId, status) {
+    // Kiểm tra status hợp lệ
+    const validStatuses = [
+      "PENDING",
+      "CONFIRMED",
+      "SHIPPING",
+      "DELIVERED",
+      "CANCELLED",
+    ];
+    if (!validStatuses.includes(status)) {
+      throw new Error(
+        `Status không hợp lệ. Chỉ chấp nhận: ${validStatuses.join(", ")}`
+      );
+    }
 
-  delete: async (id) => {
-    return prisma.order.delete({ where: { id: Number(id) } });
+    // Cập nhật
+    const order = await prisma.order.update({
+      where: { id: Number(orderId) },
+      data: { status },
+      include: {
+        orderItem: true,
+        user: true,
+        branch: true,
+      },
+    });
+
+    return order;
+  },
+  // ADMIN gán tài xế
+  async assignDriver(orderId, driverId) {
+    // Kiểm tra driver tồn tại
+    const driver = await prisma.driver.findUnique({
+      where: { id: Number(driverId) },
+    });
+    if (!driver) {
+      throw new Error("Driver không tồn tại");
+    }
+
+    // Cập nhật order
+    const order = await prisma.order.update({
+      where: { id: Number(orderId) },
+      data: { driverId: Number(driverId) },
+      include: {
+        orderItem: true,
+        user: true,
+        branch: true,
+      },
+    });
+
+    return order;
   },
 };
