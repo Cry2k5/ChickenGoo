@@ -17,13 +17,22 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+import routerPublic from "./routes/public.route.js";
+
 // Routes
 
 // Admin routes (gọi chung routerAdmin)
 app.use("/api/admin", routerAdmin);
 
 // User routes (gọi chung routerUser)
+// User routes (gọi chung routerUser)
 app.use("/api/user", routerUser);
+
+import routerShipper from "./routes/shipper.route.js";
+app.use("/api/shipper", routerShipper);
+
+// Public routes
+app.use("/api", routerPublic);
 
 // Root
 app.get("/", (req, res) => {

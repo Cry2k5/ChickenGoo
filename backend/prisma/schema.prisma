@@ -43,7 +43,6 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  branch       Branch[]
   order Order[]
   cart Cart[]
   bill Bill[]
@@ -55,11 +54,11 @@ model User {
 }
 model Branch {
   id        Int      @id @default(autoincrement())
-  userId    Int    
-  user      User   @relation( fields: [userId], references: [id])
   name      String
   phone     String?
   address   String?
+  latitude  Float?   
+  longitude Float?   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -91,7 +90,10 @@ model Combo{
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  comboItems ComboItem[]
+
+  comboItems ComboItem[] 
+  orderItems OrderItem[]
+  cartItems  CartItem[]
 
   @@map("combo")
   @@index([name])
@@ -136,6 +138,8 @@ model Driver{
   phone String  @unique
   passwordHash String @map("password_hash")
   status statusDriver @default(AVAILABLE)
+  latitude  Float?   
+  longitude Float?   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -154,11 +158,12 @@ model Order{
   totalAmount Int @map("total_amount")
   status statusOrder @default(PENDING)
   paymentMethod paymentMethod @map("payment_method")
-  deliveryAddress String @map("delivery_address")
+  deliveryAddress String @map("delivery_address") 
   deliveryPhone String @map("delivery_phone")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
+  latitude  Float?   
+  longitude Float?  
   orderItem OrderItem[]
   
   @@map("orders")
@@ -168,14 +173,18 @@ model Order{
 model OrderItem{
   id          Int      @id @default(autoincrement())
   orderId Int @map("order_id")
-  productId Int @map("product_id")
+  productId Int? @map("product_id")
+  comboId Int? @map("combo_id")
+ 
   quantity Int
-  price Float
-  
-  order Order @relation(fields: [orderId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  price Int
+  combo Combo? @relation(fields: [comboId], references: [id])
+  order Order? @relation(fields: [orderId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
 
   @@unique([orderId, productId])
+  @@unique([orderId, comboId])
+
   @@map("order_items")
 }
 
@@ -199,15 +208,18 @@ model Cart {
 
 model CartItem{
   id          Int      @id @default(autoincrement())
-  productId Int @map("product_id")
+  productId Int? @map("product_id")
+  comboId     Int?     @map("combo_id")
   cartId Int @map("cart_id")
   quantity Int
   price Int 
 
-  product Product @relation(fields: [productId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
+  combo   Combo?   @relation(fields: [comboId], references: [id])
   cart Cart @relation(fields: [cartId], references: [id])
 
   @@unique([productId, cartId])
+  @@unique([comboId, cartId])
   @@map("cart_items")
 }
 

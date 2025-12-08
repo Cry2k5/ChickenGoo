@@ -45,30 +45,31 @@ export const cartController = {
 
   addToCart: async (req, res) => {
     try {
-      const { productId, quantity } = req.body;
+      const { productId, comboId, quantity } = req.body;
 
-      if (!productId || !quantity || quantity < 1) {
+      if ((!productId && !comboId) || !quantity || quantity < 1) {
         return ApiResponse.error(
           res,
-          { message: "Thiếu thông tin hoặc số lượng không hợp lệ." },
+          { message: "Thiếu thông tin (productId hoặc comboId) hoặc số lượng không hợp lệ." },
           400
         );
       }
 
-      // Lấy cart hiện tại theo branchId (cart đã tạo khi chọn branch)
-      const cart = await cartService.getCart(req.user.id, req.body.branchId);
+      const branchId = Number(req.body.branchId);
+
+      // Lấy cart hiện tại hoặc tạo mới nếu chưa có
+      let cart = await cartService.getCart(req.user.id, branchId);
+      
       if (!cart || !cart.id) {
-        return ApiResponse.error(
-          res,
-          { message: "Vui lòng tạo cart bằng cách chọn chi nhánh trước." },
-          400
-        );
+        // Nếu chưa có cart (hoặc trả về object rỗng), tạo mới
+        cart = await cartService.createCart(req.user.id, branchId);
       }
 
       const updatedCart = await cartService.addToCart(
         req.user.id,
         cart.branchId,
-        Number(productId),
+        productId ? Number(productId) : null,
+        comboId ? Number(comboId) : null,
         Number(quantity)
       );
 

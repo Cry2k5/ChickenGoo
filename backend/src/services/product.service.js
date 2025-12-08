@@ -1,9 +1,21 @@
 import prisma from "../configs/prisma.js";
+import cloudinary from "../configs/cloudinary.js";
+import { deleteImageService } from "./upload.service.js";
 
+const getPublicIdFromUrl = (url) => {
+  if (!url) return null;
+  try {
+    const regex = /\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  } catch (e) {
+    return null;
+  }
+};
 export const productService = {
   // Lấy tất cả sản phẩm, có thể filter theo category
   async getAll(categoryId) {
-    const where = categoryId ? { categoryId } : {};
+    const where = categoryId ? { categoryId: Number(categoryId) } : {};
     const products = await prisma.product.findMany({
       where,
       include: { category: true },
@@ -56,6 +68,13 @@ export const productService = {
       if (!category) throw new Error("Category not found");
     }
 
+    if (image && product.image && image !== product.image) {
+      const publicId = getPublicIdFromUrl(product.image);
+      if (publicId) {
+        await deleteImageService(publicId);
+      }
+    }
+
     const updatedProduct = await prisma.product.update({
       where: { id: Number(id) },
       data: {
@@ -75,6 +94,13 @@ export const productService = {
       where: { id: Number(id) },
     });
     if (!product) throw new Error("Product not found");
+
+    if (product.image) {
+      const publicId = getPublicIdFromUrl(product.image);
+      if (publicId) {
+        await deleteImageService(publicId);
+      }
+    }
 
     await prisma.product.delete({ where: { id: Number(id) } });
     return { message: "Product deleted successfully" };

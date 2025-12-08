@@ -1,12 +1,31 @@
 import prisma from "../configs/prisma.js";
 
+
 export const orderService = {
+  // Lấy tất cả đơn hàng (ADMIN)
+  async getAll() {
+    return await prisma.order.findMany({
+      include: {
+        orderItem: {
+          include: {
+            product: { include: { category: true } },
+            combo: true,
+          },
+        },
+        user: true,
+        branch: true,
+        driver: true, // nếu muốn show luôn tài xế
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  },
   createOrder: async (userId, cart, body) => {
-    const { paymentMethod, deliveryAddress, deliveryPhone } = body;
+    const { paymentMethod, deliveryAddress, deliveryPhone, latitude, longitude } = body;
 
     // Convert cart items -> order items
     const items = cart.cartItem.map((item) => ({
       productId: item.productId,
+      comboId: item.comboId,
       quantity: item.quantity,
       price: item.price, // lấy giá từ CartItem
     }));
@@ -23,6 +42,8 @@ export const orderService = {
         paymentMethod,
         deliveryAddress,
         deliveryPhone,
+        latitude,
+        longitude,
         orderItem: {
           create: items,
         },
@@ -49,7 +70,10 @@ export const orderService = {
       where: { userId },
       include: {
         orderItem: {
-          include: { product: true },
+          include: {
+            product: { include: { category: true } },
+            combo: true,
+          },
         },
         branch: true,
       },
@@ -62,9 +86,29 @@ export const orderService = {
       where: { id: orderId, userId },
       include: {
         orderItem: {
-          include: { product: true },
+          include: {
+            product: { include: { category: true } },
+            combo: true,
+          },
         },
         branch: true,
+      },
+    });
+  },
+
+  getAdminOrderDetail: async (orderId) => {
+    return await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        orderItem: {
+          include: {
+            product: { include: { category: true } },
+            combo: true,
+          },
+        },
+        branch: true,
+        user: true,
+        driver: true,
       },
     });
   },
@@ -74,8 +118,8 @@ export const orderService = {
     // Kiểm tra status hợp lệ
     const validStatuses = [
       "PENDING",
-      "CONFIRMED",
-      "SHIPPING",
+      "ACCEPTED",
+      "DRIVER_ASSIGNED",
       "DELIVERED",
       "CANCELLED",
     ];
@@ -83,6 +127,19 @@ export const orderService = {
       throw new Error(
         `Status không hợp lệ. Chỉ chấp nhận: ${validStatuses.join(", ")}`
       );
+    }
+
+    // Nếu đơn hàng hoàn thành -> set driver về AVAILABLE
+    if (status === "DELIVERED") {
+      const currentOrder = await prisma.order.findUnique({
+        where: { id: Number(orderId) },
+      });
+      if (currentOrder && currentOrder.driverId) {
+        await prisma.driver.update({
+          where: { id: currentOrder.driverId },
+          data: { status: "AVAILABLE" },
+        });
+      }
     }
 
     // Cập nhật
@@ -93,6 +150,7 @@ export const orderService = {
         orderItem: true,
         user: true,
         branch: true,
+        driver: true,
       },
     });
 
@@ -108,14 +166,24 @@ export const orderService = {
       throw new Error("Driver không tồn tại");
     }
 
-    // Cập nhật order
+    // Cập nhật trạng thái driver -> ON_DELIVERY
+    await prisma.driver.update({
+      where: { id: Number(driverId) },
+      data: { status: "ON_DELIVERY" },
+    });
+
+    // Cập nhật order -> gán driver + status DRIVER_ASSIGNED
     const order = await prisma.order.update({
       where: { id: Number(orderId) },
-      data: { driverId: Number(driverId) },
+      data: {
+        driverId: Number(driverId),
+        status: "DRIVER_ASSIGNED",
+      },
       include: {
         orderItem: true,
         user: true,
         branch: true,
+        driver: true,
       },
     });
 

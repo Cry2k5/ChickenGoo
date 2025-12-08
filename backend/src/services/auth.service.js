@@ -31,6 +31,7 @@ export const authService = {
         phone,
         email,
         passwordHash,
+        role: "CUSTOMER",
       },
     });
 
@@ -51,6 +52,8 @@ export const authService = {
         phone: newUser.phone,
         email: newUser.email,
         role: newUser.role,
+        createdAt: newUser.createdAt,
+        updatedAt: newUser.updatedAt,
       },
       token,
     };
@@ -90,8 +93,22 @@ export const authService = {
         phone: user.phone,
         email: user.email,
         role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
       token,
     };
+  },
+
+  async updateProfile(userId, data) {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: data.name,
+        address: data.address,
+        email: data.email,
+      },
+    });
+    return updatedUser;
   },
 };

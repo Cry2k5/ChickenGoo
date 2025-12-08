@@ -8,4 +8,10 @@ export const config = {
     ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
   },
   jwtSecret: process.env.JWT_SECRET || "defaultSecret",
+  cloudinary: {
+    cloudName: process.env.CLOUD_NAME || "",
+    apiKey: process.env.CLOUD_KEY || "",
+    apiSecret: process.env.CLOUD_SECRET || "",
+  },
+  openCageApiKey: process.env.API_KEY || "",
 };

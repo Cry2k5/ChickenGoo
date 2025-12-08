@@ -28,10 +28,11 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "branches" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "phone" TEXT,
     "address" TEXT,
+    "latitude" DOUBLE PRECISION,
+    "longitude" DOUBLE PRECISION,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -111,6 +112,8 @@ CREATE TABLE "orders" (
     "delivery_phone" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "latitude" DOUBLE PRECISION,
+    "longitude" DOUBLE PRECISION,
 
     CONSTRAINT "orders_pkey" PRIMARY KEY ("id")
 );
@@ -119,9 +122,10 @@ CREATE TABLE "orders" (
 CREATE TABLE "order_items" (
     "id" SERIAL NOT NULL,
     "order_id" INTEGER NOT NULL,
-    "product_id" INTEGER NOT NULL,
+    "product_id" INTEGER,
+    "combo_id" INTEGER,
     "quantity" INTEGER NOT NULL,
-    "price" DOUBLE PRECISION NOT NULL,
+    "price" INTEGER NOT NULL,
 
     CONSTRAINT "order_items_pkey" PRIMARY KEY ("id")
 );
@@ -141,7 +145,8 @@ CREATE TABLE "carts" (
 -- CreateTable
 CREATE TABLE "cart_items" (
     "id" SERIAL NOT NULL,
-    "product_id" INTEGER NOT NULL,
+    "product_id" INTEGER,
+    "combo_id" INTEGER,
     "cart_id" INTEGER NOT NULL,
     "quantity" INTEGER NOT NULL,
     "price" INTEGER NOT NULL,
@@ -212,19 +217,22 @@ CREATE INDEX "orders_status_createdAt_idx" ON "orders"("status", "createdAt");
 CREATE UNIQUE INDEX "order_items_order_id_product_id_key" ON "order_items"("order_id", "product_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "order_items_order_id_combo_id_key" ON "order_items"("order_id", "combo_id");
+
+-- CreateIndex
 CREATE INDEX "carts_user_id_branch_id_idx" ON "carts"("user_id", "branch_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "cart_items_product_id_cart_id_key" ON "cart_items"("product_id", "cart_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "cart_items_combo_id_cart_id_key" ON "cart_items"("combo_id", "cart_id");
+
+-- CreateIndex
 CREATE INDEX "bills_user_id_branch_id_idx" ON "bills"("user_id", "branch_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "bill_items_bill_id_product_id_key" ON "bill_items"("bill_id", "product_id");
-
--- AddForeignKey
-ALTER TABLE "branches" ADD CONSTRAINT "branches_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "combo" ADD CONSTRAINT "combo_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -251,10 +259,13 @@ ALTER TABLE "orders" ADD CONSTRAINT "orders_branch_id_fkey" FOREIGN KEY ("branch
 ALTER TABLE "orders" ADD CONSTRAINT "orders_driver_id_fkey" FOREIGN KEY ("driver_id") REFERENCES "drivers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "order_items" ADD CONSTRAINT "order_items_combo_id_fkey" FOREIGN KEY ("combo_id") REFERENCES "combo"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "carts" ADD CONSTRAINT "carts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -263,7 +274,10 @@ ALTER TABLE "carts" ADD CONSTRAINT "carts_user_id_fkey" FOREIGN KEY ("user_id") 
 ALTER TABLE "carts" ADD CONSTRAINT "carts_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "branches"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_combo_id_fkey" FOREIGN KEY ("combo_id") REFERENCES "combo"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cart_id_fkey" FOREIGN KEY ("cart_id") REFERENCES "carts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

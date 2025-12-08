@@ -3,6 +3,33 @@ import { cartService } from "../services/cart.service.js";
 import { ApiResponse } from "../configs/apiResponse.js";
 
 export const orderController = {
+  // Lấy tất cả đơn hàng (ADMIN)
+  getAllOrders: async (req, res) => {
+    try {
+      const orders = await orderService.getAll();
+      return ApiResponse.success(
+        res,
+        orders,
+        "Lấy tất cả đơn hàng thành công."
+      );
+    } catch (error) {
+      console.error("[getAllOrders]", error);
+      return ApiResponse.error(res, error);
+    }
+  },
+  getAdminOrderDetail: async (req, res) => {
+    try {
+      const orderId = Number(req.params.id);
+      const order = await orderService.getAdminOrderDetail(orderId);
+      if (!order) {
+        return ApiResponse.error(res, { message: "Đơn hàng không tồn tại." }, 404);
+      }
+      return ApiResponse.success(res, order, "Lấy chi tiết đơn hàng thành công.");
+    } catch (error) {
+      console.error("[getAdminOrderDetail]", error);
+      return ApiResponse.error(res, error);
+    }
+  },
   createOrder: async (req, res) => {
     try {
       const userId = req.user.id;
@@ -39,8 +66,10 @@ export const orderController = {
   getOrders: async (req, res) => {
     try {
       const userId = req.user.id;
+      console.log(`[getOrders] Fetching orders for userId: ${userId}`);
 
       const orders = await orderService.getOrdersByUser(userId);
+      console.log(`[getOrders] Found ${orders.length} orders`);
 
       return ApiResponse.success(
         res,

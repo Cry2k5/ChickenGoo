@@ -4,13 +4,27 @@ export const cartService = {
   createCart: async (userId, branchId) => {
     let cart = await prisma.cart.findFirst({
       where: { userId, branchId },
-      include: { cartItem: { include: { product: true } } },
+      include: {
+        cartItem: {
+          include: {
+            product: { include: { category: true } },
+            combo: true,
+          },
+        },
+      },
     });
 
     if (!cart) {
       cart = await prisma.cart.create({
         data: { userId, branchId, totalAmount: 0 },
-        include: { cartItem: { include: { product: true } } },
+        include: {
+          cartItem: {
+            include: {
+              product: { include: { category: true } },
+              combo: true,
+            },
+          },
+        },
       });
     }
 
@@ -18,23 +32,54 @@ export const cartService = {
   },
 
   // Thêm sản phẩm vào cart
-  addToCart: async (userId, branchId, productId, quantity = 1) => {
+  addToCart: async (
+    userId,
+    branchId,
+    productId,
+    comboId,
+    quantity = 1
+  ) => {
     // Lấy cart hiện tại
     let cart = await prisma.cart.findFirst({
       where: { userId, branchId },
-      include: { cartItem: { include: { product: true } } },
+      include: {
+        cartItem: {
+          include: {
+            product: { include: { category: true } },
+            combo: true,
+          },
+        },
+      },
     });
 
     if (!cart) throw new Error("Vui lòng chọn chi nhánh trước.");
 
-    // Lấy thông tin product
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-    });
-    if (!product) throw new Error("Sản phẩm không tồn tại");
+    let price = 0;
 
-    // Kiểm tra sản phẩm đã có trong cart chưa
-    const existingItem = cart.cartItem.find((i) => i.productId === productId);
+    if (productId) {
+      // Lấy thông tin product
+      const product = await prisma.product.findUnique({
+        where: { id: productId },
+      });
+      if (!product) throw new Error("Sản phẩm không tồn tại");
+      price = product.price;
+    } else if (comboId) {
+      // Lấy thông tin combo
+      const combo = await prisma.combo.findUnique({
+        where: { id: comboId },
+      });
+      if (!combo) throw new Error("Combo không tồn tại");
+      price = combo.price;
+    } else {
+      throw new Error("Phải chọn sản phẩm hoặc combo");
+    }
+
+    // Kiểm tra sản phẩm/combo đã có trong cart chưa
+    const existingItem = cart.cartItem.find((i) => {
+      if (productId) return i.productId === productId;
+      if (comboId) return i.comboId === comboId;
+      return false;
+    });
 
     if (existingItem) {
       // Cập nhật quantity
@@ -47,9 +92,10 @@ export const cartService = {
       await prisma.cartItem.create({
         data: {
           cartId: cart.id,
-          productId,
+          productId: productId || null,
+          comboId: comboId || null,
           quantity,
-          price: product.price, // bắt buộc theo schema
+          price: price, // bắt buộc theo schema
         },
       });
     }
@@ -66,7 +112,16 @@ export const cartService = {
       where: { id: cartItemId },
       data: { quantity },
       include: {
-        cart: { include: { cartItem: { include: { product: true } } } },
+        cart: {
+          include: {
+            cartItem: {
+              include: {
+                product: { include: { category: true } },
+                combo: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -93,20 +148,31 @@ export const cartService = {
     const cart = await prisma.cart.findUnique({
       where: { id: cartId },
       include: {
-        cartItem: { include: { product: true } },
+        cartItem: {
+          include: {
+            product: { include: { category: true } },
+            combo: true,
+          },
+        },
       },
     });
 
     let total = 0;
     cart.cartItem.forEach((item) => {
-      total += item.quantity * item.product.price;
+      const price = item.product ? item.product.price : (item.combo ? item.combo.price : 0);
+      total += item.quantity * price;
     });
 
     return prisma.cart.update({
       where: { id: cartId },
       data: { totalAmount: total },
       include: {
-        cartItem: { include: { product: true } },
+        cartItem: {
+          include: {
+            product: { include: { category: true } },
+            combo: true,
+          },
+        },
       },
     });
   },
@@ -115,7 +181,14 @@ export const cartService = {
   getCart: async (userId, branchId) => {
     const cart = await prisma.cart.findFirst({
       where: { userId, branchId },
-      include: { cartItem: { include: { product: true } } },
+      include: {
+        cartItem: {
+          include: {
+            product: { include: { category: true } },
+            combo: true,
+          },
+        },
+      },
     });
 
     if (!cart) return { totalAmount: 0, cartItem: [] };
