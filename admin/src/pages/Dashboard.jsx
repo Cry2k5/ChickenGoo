@@ -7,41 +7,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
-
-const stats = [
-  {
-    title: "Tổng doanh thu",
-    value: "12,450,000₫",
-    change: "+18.5%",
-    trend: "up",
-    icon: DollarSign,
-    color: "bg-green-500",
-  },
-  {
-    title: "Khách hàng",
-    value: "1,234",
-    change: "+12.3%",
-    trend: "up",
-    icon: Users,
-    color: "bg-blue-500",
-  },
-  {
-    title: "Món ăn",
-    value: "45",
-    change: "+5.2%",
-    trend: "up",
-    icon: Package,
-    color: "bg-purple-500",
-  },
-  {
-    title: "Đơn hàng",
-    value: "287",
-    change: "+8.1%",
-    trend: "up",
-    icon: ShoppingCart,
-    color: "bg-orange-500",
-  },
-];
+import { useEffect, useState } from "react";
+import { dashboardService } from "../services/dashboardService";
 
 const recentOrders = [
   {
@@ -82,6 +49,67 @@ const recentOrders = [
 ];
 
 export default function Dashboard() {
+  const [statsData, setStatsData] = useState({
+    totalRevenue: 0,
+    totalUsers: 0,
+    totalProducts: 0,
+    totalOrders: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await dashboardService.getStats();
+        if (response.success) {
+          setStatsData(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const stats = [
+    {
+      title: "Tổng doanh thu",
+      value: statsData.totalRevenue.toLocaleString("vi-VN") + "₫",
+      change: "+0%", // Placeholder
+      trend: "up",
+      icon: DollarSign,
+      color: "bg-green-500",
+    },
+    {
+      title: "Khách hàng",
+      value: statsData.totalUsers,
+      change: "+0%",
+      trend: "up",
+      icon: Users,
+      color: "bg-blue-500",
+    },
+    {
+      title: "Món ăn",
+      value: statsData.totalProducts,
+      change: "+0%",
+      trend: "up",
+      icon: Package,
+      color: "bg-purple-500",
+    },
+    {
+      title: "Đơn hàng",
+      value: statsData.totalOrders,
+      change: "+0%",
+      trend: "up",
+      icon: ShoppingCart,
+      color: "bg-orange-500",
+    },
+  ];
+
+  if (loading) return <div>Loading...</div>;
+
   return (
     <div className="space-y-6">
       <div>

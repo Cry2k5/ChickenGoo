@@ -1,276 +1,29 @@
 import { useState } from "react";
-import { Search, Filter, MoreVertical, Eye, Package } from "lucide-react";
+import { Search, Filter, MoreVertical, Eye, Package, X, Truck } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
 import Pagination from "../components/Pagination";
-
-// Mock data - phù hợp với Order schema
-let mockOrders = [
-  {
-    id: 1,
-    branchId: 1,
-    branchName: "Chi nhánh Quận 1",
-    totalAmount: 199000,
-    status: "PENDING",
-    paymentMethod: "COD",
-    deliveryAddress: "123 Đường Nguyễn Huệ, Quận 1, TP.HCM",
-    deliveryPhone: "0901234567",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: 2,
-    branchId: 2,
-    branchName: "Chi nhánh Quận 2",
-    totalAmount: 149000,
-    status: "ACCEPTED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "456 Đường Lê Lợi, Quận 2, TP.HCM",
-    deliveryPhone: "0902345678",
-    createdAt: "2024-01-16",
-  },
-  {
-    id: 3,
-    branchId: 1,
-    branchName: "Chi nhánh Quận 1",
-    totalAmount: 134000,
-    status: "DRIVER_ASSIGNED",
-    paymentMethod: "COD",
-    deliveryAddress: "789 Đường Võ Văn Tần, Quận 3, TP.HCM",
-    deliveryPhone: "0903456789",
-    createdAt: "2024-01-16",
-  },
-  {
-    id: 4,
-    branchId: 2,
-    branchName: "Chi nhánh Quận 2",
-    totalAmount: 99000,
-    status: "DELIVERED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "321 Đường Điện Biên Phủ, Quận Bình Thạnh, TP.HCM",
-    deliveryPhone: "0904567890",
-    createdAt: "2024-01-17",
-  },
-  {
-    id: 5,
-    branchId: 1,
-    branchName: "Chi nhánh Quận 1",
-    totalAmount: 114000,
-    status: "CANCELLED",
-    paymentMethod: "COD",
-    deliveryAddress: "654 Đường Cách Mạng Tháng 8, Quận 10, TP.HCM",
-    deliveryPhone: "0905678901",
-    createdAt: "2024-01-17",
-  },
-  {
-    id: 6,
-    branchId: 2,
-    branchName: "Chi nhánh Quận 2",
-    totalAmount: 249000,
-    status: "DELIVERED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "987 Đường Phạm Văn Đồng, Quận Thủ Đức, TP.HCM",
-    deliveryPhone: "0906789012",
-    createdAt: "2024-01-18",
-  },
-  {
-    id: 7,
-    totalAmount: 249000,
-    status: "DELIVERED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "987 Đường Phạm Văn Đồng, Quận Thủ Đức, TP.HCM",
-    deliveryPhone: "0906789012",
-    createdAt: "2024-01-18",
-  },
-  {
-    id: 8,
-    totalAmount: 249000,
-    status: "DELIVERED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "987 Đường Phạm Văn Đồng, Quận Thủ Đức, TP.HCM",
-    deliveryPhone: "0906789012",
-    createdAt: "2024-01-18",
-  },
-  {
-    id: 9,
-    totalAmount: 249000,
-    status: "DELIVERED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "987 Đường Phạm Văn Đồng, Quận Thủ Đức, TP.HCM",
-    deliveryPhone: "0906789012",
-    createdAt: "2024-01-18",
-  },
-  {
-    id: 7,
-    branchId: 1,
-    branchName: "Chi nhánh Quận 1",
-    totalAmount: 199000,
-    status: "PENDING",
-    paymentMethod: "COD",
-    deliveryAddress: "111 Đường Nguyễn Trãi, Quận 5, TP.HCM",
-    deliveryPhone: "0907890123",
-    createdAt: "2024-01-19",
-  },
-  {
-    id: 8,
-    branchId: 2,
-    branchName: "Chi nhánh Quận 2",
-    totalAmount: 149000,
-    status: "ACCEPTED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "222 Đường Trần Hưng Đạo, Quận 5, TP.HCM",
-    deliveryPhone: "0908901234",
-    createdAt: "2024-01-19",
-  },
-  {
-    id: 9,
-    branchId: 1,
-    branchName: "Chi nhánh Quận 1",
-    totalAmount: 134000,
-    status: "DRIVER_ASSIGNED",
-    paymentMethod: "COD",
-    deliveryAddress: "333 Đường Lý Tự Trọng, Quận 1, TP.HCM",
-    deliveryPhone: "0909012345",
-    createdAt: "2024-01-20",
-  },
-  {
-    id: 10,
-    branchId: 2,
-    branchName: "Chi nhánh Quận 2",
-    totalAmount: 99000,
-    status: "DELIVERED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "444 Đường Pasteur, Quận 3, TP.HCM",
-    deliveryPhone: "0900123456",
-    createdAt: "2024-01-20",
-  },
-  {
-    id: 11,
-    branchId: 1,
-    branchName: "Chi nhánh Quận 1",
-    totalAmount: 114000,
-    status: "CANCELLED",
-    paymentMethod: "COD",
-    deliveryAddress: "555 Đường Nam Kỳ Khởi Nghĩa, Quận 3, TP.HCM",
-    deliveryPhone: "0901234567",
-    createdAt: "2024-01-21",
-  },
-  {
-    id: 12,
-    branchId: 2,
-    branchName: "Chi nhánh Quận 2",
-    totalAmount: 249000,
-    status: "DELIVERED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "666 Đường Hai Bà Trưng, Quận 1, TP.HCM",
-    deliveryPhone: "0902345678",
-    createdAt: "2024-01-21",
-  },
-  {
-    id: 13,
-    branchId: 1,
-    branchName: "Chi nhánh Quận 1",
-    totalAmount: 199000,
-    status: "PENDING",
-    paymentMethod: "COD",
-    deliveryAddress: "777 Đường Điện Biên Phủ, Quận Bình Thạnh, TP.HCM",
-    deliveryPhone: "0903456789",
-    createdAt: "2024-01-22",
-  },
-  {
-    id: 14,
-    branchId: 2,
-    branchName: "Chi nhánh Quận 2",
-    totalAmount: 149000,
-    status: "ACCEPTED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "888 Đường Xô Viết Nghệ Tĩnh, Quận Bình Thạnh, TP.HCM",
-    deliveryPhone: "0904567890",
-    createdAt: "2024-01-22",
-  },
-  {
-    id: 15,
-    branchId: 1,
-    branchName: "Chi nhánh Quận 1",
-    totalAmount: 134000,
-    status: "DRIVER_ASSIGNED",
-    paymentMethod: "COD",
-    deliveryAddress: "999 Đường Hoàng Văn Thụ, Quận Phú Nhuận, TP.HCM",
-    deliveryPhone: "0905678901",
-    createdAt: "2024-01-23",
-  },
-  {
-    id: 16,
-    branchId: 2,
-    branchName: "Chi nhánh Quận 2",
-    totalAmount: 99000,
-    status: "DELIVERED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "101 Đường Nguyễn Văn Trỗi, Quận Phú Nhuận, TP.HCM",
-    deliveryPhone: "0906789012",
-    createdAt: "2024-01-23",
-  },
-  {
-    id: 17,
-    branchId: 1,
-    branchName: "Chi nhánh Quận 1",
-    totalAmount: 114000,
-    status: "CANCELLED",
-    paymentMethod: "COD",
-    deliveryAddress: "202 Đường Lê Văn Sỹ, Quận 3, TP.HCM",
-    deliveryPhone: "0907890123",
-    createdAt: "2024-01-24",
-  },
-  {
-    id: 18,
-    branchId: 2,
-    branchName: "Chi nhánh Quận 2",
-    totalAmount: 249000,
-    status: "DELIVERED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "303 Đường Nguyễn Đình Chiểu, Quận 3, TP.HCM",
-    deliveryPhone: "0908901234",
-    createdAt: "2024-01-24",
-  },
-  {
-    id: 19,
-    branchId: 1,
-    branchName: "Chi nhánh Quận 1",
-    totalAmount: 199000,
-    status: "PENDING",
-    paymentMethod: "COD",
-    deliveryAddress: "404 Đường Võ Thị Sáu, Quận 3, TP.HCM",
-    deliveryPhone: "0909012345",
-    createdAt: "2024-01-25",
-  },
-  {
-    id: 20,
-    branchId: 2,
-    branchName: "Chi nhánh Quận 2",
-    totalAmount: 149000,
-    status: "ACCEPTED",
-    paymentMethod: "MOMO",
-    deliveryAddress: "505 Đường Cách Mạng Tháng 8, Quận 10, TP.HCM",
-    deliveryPhone: "0900123456",
-    createdAt: "2024-01-25",
-  },
-];
+import useOrders from "../hooks/useOrders";
+import { driverService } from "../services/driverService";
 
 export default function Orders() {
-  const [orders, setOrders] = useState(mockOrders);
+  const { orders, loading, updateOrderStatus, assignDriver } = useOrders();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [drivers, setDrivers] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
-      order.id.toString().includes(searchTerm) ||
-      order.deliveryPhone.includes(searchTerm) ||
-      order.deliveryAddress?.toLowerCase().includes(searchTerm.toLowerCase());
+      (order._id || order.id).toString().includes(searchTerm) ||
+      (order.deliveryPhone && order.deliveryPhone.includes(searchTerm)) ||
+      (order.deliveryAddress &&
+        order.deliveryAddress.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus =
       statusFilter === "all" || order.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -346,15 +99,40 @@ export default function Orders() {
     setStatusDialogOpen(true);
   };
 
-  const confirmStatusUpdate = (newStatus) => {
+  const confirmStatusUpdate = async (newStatus) => {
     if (selectedOrder) {
-      setOrders(
-        orders.map((o) =>
-          o.id === selectedOrder.id ? { ...o, status: newStatus } : o
-        )
+      const success = await updateOrderStatus(
+        selectedOrder._id || selectedOrder.id,
+        newStatus
       );
-      setStatusDialogOpen(false);
-      setSelectedOrder(null);
+      if (success) {
+        setStatusDialogOpen(false);
+        setSelectedOrder(null);
+      }
+    }
+  };
+
+  const handleAssignDriver = async (order) => {
+    setSelectedOrder(order);
+    try {
+      const data = await driverService.getAll();
+      setDrivers(data.data || data);
+      setAssignDialogOpen(true);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const confirmAssign = async (driverId) => {
+    if (selectedOrder && driverId) {
+      const success = await assignDriver(
+        selectedOrder._id || selectedOrder.id,
+        driverId
+      );
+      if (success) {
+        setAssignDialogOpen(false);
+        setSelectedOrder(null);
+      }
     }
   };
 
@@ -427,6 +205,9 @@ export default function Orders() {
                 <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                   Thông tin giao hàng
                 </th>
+                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                  Tài xế
+                </th>
                 <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                   Phương thức thanh toán
                 </th>
@@ -442,24 +223,32 @@ export default function Orders() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedOrders.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+              ) : paginatedOrders.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-6 py-8 text-center text-gray-500"
                   >
-                    Không tìm thấy đơn hàng nào
+                    {orders.length === 0
+                      ? "Chưa có dữ liệu..."
+                      : "Không tìm thấy đơn hàng nào"}
                   </td>
                 </tr>
               ) : (
                 paginatedOrders.map((order) => (
                   <tr
-                    key={order.id}
+                    key={order._id || order.id}
                     className="hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        #{order.id}
+                        #{order._id || order.id}
                       </div>
                       <div className="text-xs text-gray-500 md:hidden mt-1">
                         {order.branchName || "N/A"}
@@ -470,7 +259,7 @@ export default function Orders() {
                     </td>
                     <td className="px-4 lg:px-6 py-4 hidden md:table-cell">
                       <div className="text-sm text-gray-900">
-                        {order.branchName || "N/A"}
+                        {order.branch?.name || "N/A"}
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4 hidden md:table-cell">
@@ -482,6 +271,13 @@ export default function Orders() {
                           <div className="text-xs text-gray-500 truncate max-w-xs">
                             {order.deliveryAddress}
                           </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 hidden md:table-cell">
+                      <div className="text-sm text-gray-900">
+                        {order.driver?.name || (
+                          <span className="text-gray-400 italic">Chưa gán</span>
                         )}
                       </div>
                     </td>
@@ -530,6 +326,13 @@ export default function Orders() {
                               <Package size={16} />
                               Cập nhật trạng thái
                             </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                              onClick={() => handleAssignDriver(order)}
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer outline-none"
+                            >
+                              <Truck size={16} />
+                              Gán tài xế
+                            </DropdownMenu.Item>
                           </DropdownMenu.Content>
                         </DropdownMenu.Portal>
                       </DropdownMenu.Root>
@@ -575,7 +378,7 @@ export default function Orders() {
                   <div>
                     <p className="text-sm text-gray-500">Mã đơn hàng</p>
                     <p className="font-semibold text-gray-900">
-                      #{selectedOrder.id}
+                      #{selectedOrder._id || selectedOrder.id}
                     </p>
                   </div>
                   <div>
@@ -604,11 +407,33 @@ export default function Orders() {
                       {selectedOrder.deliveryAddress}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Tổng tiền</p>
-                    <p className="font-semibold text-gray-900 text-lg">
-                      {formatPrice(selectedOrder.totalAmount)}
-                    </p>
+                  <div className="col-span-2">
+                    <p className="text-sm text-gray-500 mb-2">Chi tiết đơn hàng</p>
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                      {selectedOrder.orderItem?.map((item, index) => (
+                        <div key={index} className="flex justify-between items-center">
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {item.product?.name || item.combo?.name || "Sản phẩm không xác định"}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {item.combo ? "Combo" : "Sản phẩm"} x {item.quantity}
+                            </p>
+                          </div>
+                          <p className="font-medium text-gray-900">
+                            {formatPrice(item.price * item.quantity)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="col-span-2 border-t border-gray-200 pt-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-gray-500">Tổng tiền</p>
+                      <p className="font-bold text-gray-900 text-lg">
+                        {formatPrice(selectedOrder.totalAmount)}
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Trạng thái</p>
@@ -646,7 +471,8 @@ export default function Orders() {
             {selectedOrder && (
               <div className="space-y-4">
                 <p className="text-gray-600">
-                  Đơn hàng: <strong>#{selectedOrder.id}</strong>
+                  Đơn hàng:{" "}
+                  <strong>#{selectedOrder._id || selectedOrder.id}</strong>
                 </p>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -678,6 +504,71 @@ export default function Orders() {
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Cập nhật
+                  </button>
+                </div>
+              </div>
+            )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* Assign Driver Dialog */}
+      <Dialog.Root open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50 z-50" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl w-full max-w-md z-50 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <Dialog.Title className="text-xl font-bold text-gray-900">
+                Gán tài xế
+              </Dialog.Title>
+              <Dialog.Close asChild>
+                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                  <X size={20} />
+                </button>
+              </Dialog.Close>
+            </div>
+
+            {selectedOrder && (
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  Đơn hàng:{" "}
+                  <strong>#{selectedOrder._id || selectedOrder.id}</strong>
+                </p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Chọn tài xế
+                  </label>
+                  <select
+                    id="driver-select"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>
+                      -- Chọn tài xế --
+                    </option>
+                    {drivers.map((driver) => (
+                      <option key={driver.id} value={driver.id}>
+                        {driver.name} - {driver.status}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <Dialog.Close asChild>
+                    <button className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                      Hủy
+                    </button>
+                  </Dialog.Close>
+                  <button
+                    onClick={() => {
+                      const select = document.getElementById("driver-select");
+                      if (select.value) {
+                        confirmAssign(select.value);
+                      }
+                    }}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Xác nhận
                   </button>
                 </div>
               </div>

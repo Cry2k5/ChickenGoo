@@ -32,10 +32,15 @@ const menuItems = [
   { icon: Settings, label: "Cài đặt", path: "/settings" },
 ];
 
+import useSignOut from "../../hooks/useSignOut";
+import useAuthUser from "../../hooks/useAuthUser";
+
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { signOutMutation } = useSignOut();
+  const { authUser } = useAuthUser();
 
   // Responsive: đóng sidebar trên mobile
   useEffect(() => {
@@ -121,19 +126,19 @@ export default function AdminLayout() {
               <Avatar.Root className="inline-flex h-10 w-10 select-none items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-500 to-purple-500">
                 <Avatar.Image
                   className="h-full w-full rounded-[inherit] object-cover"
-                  src="https://i.pravatar.cc/150?img=12"
+                  src={authUser?.avatar || "https://i.pravatar.cc/150?img=12"}
                   alt="Avatar"
                 />
                 <Avatar.Fallback className="text-sm font-medium leading-1 text-white">
-                  AD
+                  {authUser?.fullName?.charAt(0) || "AD"}
                 </Avatar.Fallback>
               </Avatar.Root>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  Admin User
+                  {authUser?.fullName || "Admin User"}
                 </p>
                 <p className="text-xs text-gray-500 truncate">
-                  admin@example.com
+                  {authUser?.email || "admin@example.com"}
                 </p>
               </div>
             </div>
@@ -181,11 +186,11 @@ export default function AdminLayout() {
                   <Avatar.Root className="inline-flex h-8 w-8 select-none items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-500 to-purple-500">
                     <Avatar.Image
                       className="h-full w-full rounded-[inherit] object-cover"
-                      src="https://i.pravatar.cc/150?img=12"
+                      src={authUser?.avatar || "https://i.pravatar.cc/150?img=12"}
                       alt="Avatar"
                     />
                     <Avatar.Fallback className="text-xs font-medium leading-1 text-white">
-                      AD
+                      {authUser?.fullName?.charAt(0) || "AD"}
                     </Avatar.Fallback>
                   </Avatar.Root>
                   <ChevronDown
@@ -206,7 +211,10 @@ export default function AdminLayout() {
                     Cài đặt
                   </DropdownMenu.Item>
                   <Separator.Root className="h-px bg-gray-200 my-1" />
-                  <DropdownMenu.Item className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded cursor-pointer outline-none">
+                  <DropdownMenu.Item 
+                    className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded cursor-pointer outline-none"
+                    onClick={() => signOutMutation()}
+                  >
                     Đăng xuất
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>

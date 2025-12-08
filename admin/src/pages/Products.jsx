@@ -11,202 +11,12 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import ProductDialog from "../components/dialogs/ProductDialog";
 import Pagination from "../components/Pagination";
-
-// Mock data - trong thực tế sẽ lấy từ API
-let mockProducts = [
-  {
-    id: 1,
-    name: "Gà rán giòn cay",
-    categoryId: 1,
-    category: "Gà rán",
-    price: 89000,
-    desc: "Gà rán giòn cay đậm đà, thơm ngon",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Gà rán không cay",
-    categoryId: 1,
-    category: "Gà rán",
-    price: 89000,
-    desc: "Gà rán giòn, không cay, phù hợp mọi lứa tuổi",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-16",
-  },
-  {
-    id: 3,
-    name: "Khoai tây chiên",
-    categoryId: 4,
-    category: "Món phụ",
-    price: 45000,
-    desc: "Khoai tây chiên giòn, nóng hổi",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-17",
-  },
-  {
-    id: 4,
-    name: "Coca Cola",
-    categoryId: 3,
-    category: "Đồ uống",
-    price: 25000,
-    desc: "Nước ngọt có ga",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-18",
-  },
-  {
-    id: 5,
-    name: "Pepsi",
-    categoryId: 3,
-    category: "Đồ uống",
-    price: 25000,
-    desc: "Nước ngọt có ga",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-19",
-  },
-  {
-    id: 6,
-    name: "Kem vani",
-    categoryId: 5,
-    category: "Tráng miệng",
-    price: 35000,
-    desc: "Kem vani mát lạnh",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-20",
-  },
-  {
-    id: 7,
-    name: "Gà rán sốt BBQ",
-    categoryId: 1,
-    category: "Gà rán",
-    price: 95000,
-    desc: "Gà rán sốt BBQ thơm ngon",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-21",
-  },
-  {
-    id: 8,
-    name: "Gà rán sốt mật ong",
-    categoryId: 1,
-    category: "Gà rán",
-    price: 98000,
-    desc: "Gà rán sốt mật ong ngọt ngào",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-22",
-  },
-  {
-    id: 9,
-    name: "Cánh gà rán",
-    categoryId: 1,
-    category: "Gà rán",
-    price: 75000,
-    desc: "Cánh gà rán giòn",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-23",
-  },
-  {
-    id: 10,
-    name: "Đùi gà rán",
-    categoryId: 1,
-    category: "Gà rán",
-    price: 85000,
-    desc: "Đùi gà rán thơm ngon",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-24",
-  },
-  {
-    id: 11,
-    name: "7Up",
-    categoryId: 3,
-    category: "Đồ uống",
-    price: 25000,
-    desc: "Nước ngọt có ga",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-25",
-  },
-  {
-    id: 12,
-    name: "Sprite",
-    categoryId: 3,
-    category: "Đồ uống",
-    price: 25000,
-    desc: "Nước ngọt có ga",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-26",
-  },
-  {
-    id: 13,
-    name: "Nước cam ép",
-    categoryId: 3,
-    category: "Đồ uống",
-    price: 30000,
-    desc: "Nước cam ép tươi",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-27",
-  },
-  {
-    id: 14,
-    name: "Bánh mì gà",
-    categoryId: 4,
-    category: "Món phụ",
-    price: 35000,
-    desc: "Bánh mì gà thơm ngon",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-28",
-  },
-  {
-    id: 15,
-    name: "Salad rau củ",
-    categoryId: 4,
-    category: "Món phụ",
-    price: 40000,
-    desc: "Salad rau củ tươi ngon",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-29",
-  },
-  {
-    id: 16,
-    name: "Kem chocolate",
-    categoryId: 5,
-    category: "Tráng miệng",
-    price: 35000,
-    desc: "Kem chocolate đậm đà",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-01-30",
-  },
-  {
-    id: 17,
-    name: "Kem dâu",
-    categoryId: 5,
-    category: "Tráng miệng",
-    price: 35000,
-    desc: "Kem dâu tươi mát",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-02-01",
-  },
-  {
-    id: 18,
-    name: "Bánh flan",
-    categoryId: 5,
-    category: "Tráng miệng",
-    price: 30000,
-    desc: "Bánh flan mềm mịn",
-    image: "https://via.placeholder.com/400",
-    createdAt: "2024-02-02",
-  },
-];
-
-// Mock categories
-const mockCategories = [
-  { id: 1, name: "Gà rán" },
-  { id: 2, name: "Combo" },
-  { id: 3, name: "Đồ uống" },
-  { id: 4, name: "Món phụ" },
-  { id: 5, name: "Tráng miệng" },
-];
+import useProducts from "../hooks/useProducts";
+import useCategories from "../hooks/useCategories";
 
 export default function Products() {
-  const [products, setProducts] = useState(mockProducts);
+  const { products, loading: productsLoading, createProduct, updateProduct, deleteProduct } = useProducts();
+  const { categories } = useCategories();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -245,42 +55,28 @@ export default function Products() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (productToDelete) {
-      setProducts(products.filter((p) => p.id !== productToDelete.id));
-      setDeleteDialogOpen(false);
-      setProductToDelete(null);
+      const success = await deleteProduct(productToDelete._id || productToDelete.id);
+      if (success) {
+        setDeleteDialogOpen(false);
+        setProductToDelete(null);
+      }
     }
   };
 
-  const handleSave = (productData) => {
-    const category = mockCategories.find(
-      (c) => c.id === parseInt(productData.categoryId)
-    );
-    if (productData.id) {
+  const handleSave = async (productData) => {
+    let success = false;
+    if (productData._id || productData.id) {
       // Update existing product
-      setProducts(
-        products.map((p) =>
-          p.id === productData.id
-            ? {
-                ...p,
-                ...productData,
-                price: parseInt(productData.price),
-                category: category?.name || "",
-              }
-            : p
-        )
-      );
+      success = await updateProduct(productData._id || productData.id, productData);
     } else {
       // Add new product
-      const newProduct = {
-        ...productData,
-        id: Math.max(...products.map((p) => p.id), 0) + 1,
-        price: parseInt(productData.price),
-        category: category?.name || "",
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setProducts([...products, newProduct]);
+      success = await createProduct(productData);
+    }
+    
+    if (success) {
+      setDialogOpen(false);
     }
   };
 
@@ -355,19 +151,25 @@ export default function Products() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedProducts.length === 0 ? (
+              {productsLoading ? (
+                <tr>
+                  <td colSpan="5" className="px-4 lg:px-6 py-12 text-center text-gray-500">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+              ) : paginatedProducts.length === 0 ? (
                 <tr>
                   <td
                     colSpan="5"
                     className="px-4 lg:px-6 py-12 text-center text-gray-500"
                   >
-                    Không tìm thấy món ăn nào
+                    {products.length === 0 ? "Chưa có dữ liệu..." : "Không tìm thấy món ăn nào"}
                   </td>
                 </tr>
               ) : (
                 paginatedProducts.map((product) => (
                   <tr
-                    key={product.id}
+                    key={product._id || product.id}
                     className="hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
@@ -397,7 +199,7 @@ export default function Products() {
                     </td>
                     <td className="px-4 lg:px-6 py-4 whitespace-nowrap hidden md:table-cell">
                       <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                        {product.category}
+                        {product.category?.name || product.category || "Chưa phân loại"}
                       </span>
                     </td>
                     <td className="px-4 lg:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
@@ -456,14 +258,14 @@ export default function Products() {
 
       {/* Product Dialog */}
       <ProductDialog
-        key={selectedProduct?.id || "new"}
+        key={selectedProduct?._id || selectedProduct?.id || "new"}
         open={dialogOpen}
         onClose={() => {
           setDialogOpen(false);
           setSelectedProduct(null);
         }}
         product={selectedProduct}
-        categories={mockCategories}
+        categories={categories}
         onSave={handleSave}
       />
 

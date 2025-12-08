@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import { X, Upload, Loader2 } from "lucide-react";
+import { uploadService } from "../../services/uploadService";
 
 export default function ProductDialog({
   open,
@@ -29,16 +30,51 @@ export default function ProductDialog({
     };
   };
 
-  const [formData, setFormData] = useState(getInitialData);
 
-  const handleSubmit = (e) => {
+
+  const [formData, setFormData] = useState(getInitialData);
+  const [imageFile, setImageFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(product?.image || "");
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.categoryId || !formData.price) {
       alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
       return;
     }
-    onSave({ ...formData, id: product?.id });
-    onClose();
+
+    try {
+      let imageUrl = formData.image;
+
+      if (imageFile) {
+        setUploading(true);
+        const uploadResult = await uploadService.uploadProductImage(imageFile);
+        if (uploadResult.success) {
+          imageUrl = uploadResult.data.url;
+        } else {
+          alert("Upload ảnh thất bại: " + uploadResult.message);
+          setUploading(false);
+          return;
+        }
+      }
+
+      onSave({ ...formData, image: imageUrl, id: product?.id });
+      onClose();
+    } catch (error) {
+      console.error("Error saving product:", error);
+      alert("Có lỗi xảy ra khi lưu sản phẩm");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -115,27 +151,38 @@ export default function ProductDialog({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hình ảnh (URL)
+                Hình ảnh
               </label>
-              <input
-                type="url"
-                value={formData.image}
-                onChange={(e) =>
-                  setFormData({ ...formData, image: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://example.com/image.jpg"
-              />
-              {formData.image && (
-                <img
-                  src={formData.image}
-                  alt="Preview"
-                  className="mt-2 w-32 h-32 object-cover rounded-lg border border-gray-200"
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                  }}
-                />
-              )}
+              <div className="flex items-center gap-4">
+                <div className="relative w-32 h-32 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Upload className="text-gray-400" size={24} />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100
+                    "
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    PNG, JPG, GIF up to 5MB
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -166,7 +213,16 @@ export default function ProductDialog({
                 type="submit"
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                {product ? "Cập nhật" : "Thêm mới"}
+                {uploading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="animate-spin" size={16} />
+                    Đang xử lý...
+                  </span>
+                ) : product ? (
+                  "Cập nhật"
+                ) : (
+                  "Thêm mới"
+                )}
               </button>
             </div>
           </form>

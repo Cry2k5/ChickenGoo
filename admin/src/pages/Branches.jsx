@@ -1,44 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Plus, MoreVertical, Edit, Trash2, Building2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import BranchDialog from "../components/dialogs/BranchDialog";
-
-// Mock data
-let mockBranches = [
-  {
-    id: 1,
-    userId: 2,
-    userName: "Trần Thị B",
-    name: "Chi nhánh Quận 1",
-    phone: "0281234567",
-    address: "123 Đường Nguyễn Huệ, Quận 1, TP.HCM",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: 2,
-    userId: 3,
-    userName: "Lê Văn C",
-    name: "Chi nhánh Quận 2",
-    phone: "0282345678",
-    address: "456 Đường Võ Văn Tần, Quận 2, TP.HCM",
-    createdAt: "2024-01-16",
-  },
-];
-
-// Mock users (ADMIN role)
-const mockUsers = [
-  { id: 2, name: "Trần Thị B", email: "tranthib@example.com" },
-  { id: 3, name: "Lê Văn C", email: "levanc@example.com" },
-];
+import { branchService } from "../services/branchService";
+import toast from "react-hot-toast";
 
 export default function Branches() {
-  const [branches, setBranches] = useState(mockBranches);
+  const [branches, setBranches] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [branchToDelete, setBranchToDelete] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchBranches();
+  }, []);
+
+  const fetchBranches = async () => {
+    try {
+      setLoading(true);
+      const response = await branchService.getAll();
+      if (response.success) {
+        setBranches(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch branches:", error);
+      toast.error("Không thể tải danh sách chi nhánh");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredBranches = branches.filter(
     (branch) =>
@@ -62,38 +56,38 @@ export default function Branches() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (branchToDelete) {
-      setBranches(branches.filter((b) => b.id !== branchToDelete.id));
-      setDeleteDialogOpen(false);
-      setBranchToDelete(null);
+      try {
+        await branchService.delete(branchToDelete.id);
+        toast.success("Xóa chi nhánh thành công");
+        fetchBranches();
+      } catch (error) {
+        console.error("Failed to delete branch:", error);
+        toast.error("Không thể xóa chi nhánh");
+      } finally {
+        setDeleteDialogOpen(false);
+        setBranchToDelete(null);
+      }
     }
   };
 
-  const handleSave = (branchData) => {
-    const user = mockUsers.find((u) => u.id === parseInt(branchData.userId));
-    if (branchData.id) {
-      // Update existing branch
-      setBranches(
-        branches.map((b) =>
-          b.id === branchData.id
-            ? {
-                ...b,
-                ...branchData,
-                userName: user?.name || "",
-              }
-            : b
-        )
-      );
-    } else {
-      // Add new branch
-      const newBranch = {
-        ...branchData,
-        id: Math.max(...branches.map((b) => b.id), 0) + 1,
-        userName: user?.name || "",
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setBranches([...branches, newBranch]);
+  const handleSave = async (branchData) => {
+    try {
+      if (branchData.id) {
+        // Update existing branch
+        await branchService.update(branchData.id, branchData);
+        toast.success("Cập nhật chi nhánh thành công");
+      } else {
+        // Add new branch
+        await branchService.create(branchData);
+        toast.success("Thêm chi nhánh thành công");
+      }
+      fetchBranches();
+      setDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to save branch:", error);
+      toast.error("Không thể lưu chi nhánh");
     }
   };
 
@@ -143,9 +137,6 @@ export default function Branches() {
                 <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Chi nhánh
                 </th>
-                <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                  Quản lý
-                </th>
                 <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                   Liên hệ
                 </th>
@@ -155,9 +146,15 @@ export default function Branches() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredBranches.length === 0 ? (
+              {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                    Đang tải...
+                  </td>
+                </tr>
+              ) : filteredBranches.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
                     Không tìm thấy chi nhánh nào
                   </td>
                 </tr>
@@ -183,9 +180,6 @@ export default function Branches() {
                           )}
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                      <div className="text-sm text-gray-900">{branch.userName}</div>
                     </td>
                     <td className="px-4 lg:px-6 py-4 hidden lg:table-cell">
                       <div>
@@ -246,7 +240,6 @@ export default function Branches() {
           setSelectedBranch(null);
         }}
         branch={selectedBranch}
-        users={mockUsers}
         onSave={handleSave}
       />
 

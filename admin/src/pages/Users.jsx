@@ -4,49 +4,16 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Avatar from "@radix-ui/react-avatar";
 import * as Dialog from "@radix-ui/react-dialog";
 import UserDialog from "../components/dialogs/UserDialog";
+import useUsers from "../hooks/useUsers";
 
-// Mock data - trong thực tế sẽ lấy từ API
-let mockUsers = [
-  {
-    id: 1,
-    name: "Nguyễn Văn A",
-    email: "nguyenvana@example.com",
-    phone: "0901234567",
-    address: "123 Đường ABC, Quận 1, TP.HCM",
-    role: "CUSTOMER",
-    branchId: null,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Trần Thị B",
-    email: "tranthib@example.com",
-    phone: "0902345678",
-    address: "456 Đường XYZ, Quận 2, TP.HCM",
-    role: "ADMIN",
-    branchId: 1,
-    createdAt: "2024-01-16",
-  },
-  {
-    id: 3,
-    name: "Lê Văn C",
-    email: "levanc@example.com",
-    phone: "0903456789",
-    address: "789 Đường DEF, Quận 3, TP.HCM",
-    role: "CUSTOMER",
-    branchId: null,
-    createdAt: "2024-01-17",
-  },
-];
-
-// Mock branches
+// Mock branches - giữ lại vì chưa có API cho branches
 const mockBranches = [
   { id: 1, name: "Chi nhánh Quận 1" },
   { id: 2, name: "Chi nhánh Quận 2" },
 ];
 
 export default function Users() {
-  const [users, setUsers] = useState(mockUsers);
+  const { users, loading, createUser, updateUser, deleteUser } = useUsers();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -75,28 +42,28 @@ export default function Users() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (userToDelete) {
-      setUsers(users.filter((u) => u.id !== userToDelete.id));
-      setDeleteDialogOpen(false);
-      setUserToDelete(null);
+      const success = await deleteUser(userToDelete._id || userToDelete.id);
+      if (success) {
+        setDeleteDialogOpen(false);
+        setUserToDelete(null);
+      }
     }
   };
 
-  const handleSave = (userData) => {
-    if (userData.id) {
+  const handleSave = async (userData) => {
+    let success = false;
+    if (userData._id || userData.id) {
       // Update existing user
-      setUsers(
-        users.map((u) => (u.id === userData.id ? { ...u, ...userData } : u))
-      );
+      success = await updateUser(userData._id || userData.id, userData);
     } else {
       // Add new user
-      const newUser = {
-        ...userData,
-        id: Math.max(...users.map((u) => u.id), 0) + 1,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setUsers([...users, newUser]);
+      success = await createUser(userData);
+    }
+    
+    if (success) {
+      setDialogOpen(false);
     }
   };
 
@@ -183,23 +150,29 @@ export default function Users() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.length === 0 ? (
+              {loading ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                    Không tìm thấy người dùng nào
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                    {users.length === 0 ? "Chưa có dữ liệu..." : "Không tìm thấy người dùng nào"}
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
                   <tr
-                    key={user.id}
+                    key={user._id || user.id}
                     className="hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <Avatar.Root className="inline-flex h-10 w-10 select-none items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-500 to-purple-500">
                           <Avatar.Fallback className="text-sm font-medium leading-1 text-white">
-                            {user.name.charAt(0)}
+                            {user.name ? user.name.charAt(0) : "?"}
                           </Avatar.Fallback>
                         </Avatar.Root>
                         <div>
@@ -278,7 +251,7 @@ export default function Users() {
 
       {/* User Dialog */}
       <UserDialog
-        key={selectedUser?.id || "new"}
+        key={selectedUser?._id || selectedUser?.id || "new"}
         open={dialogOpen}
         onClose={() => {
           setDialogOpen(false);

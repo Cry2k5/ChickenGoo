@@ -1,41 +1,13 @@
 import { useState } from "react";
-import { Plus, MoreVertical, Edit, Trash2, Folder } from "lucide-react";
+import { Plus, MoreVertical, Edit, Trash2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import CategoryDialog from "../components/dialogs/CategoryDialog";
 import Pagination from "../components/Pagination";
-
-// Mock data - thêm nhiều dữ liệu để demo phân trang
-let mockCategories = [
-  {
-    id: 1,
-    name: "Gà rán",
-    description: "Các món gà rán thơm ngon",
-    icon: "🍗",
-  },
-  { id: 2, name: "Combo", description: "Combo tiết kiệm", icon: "🍱" },
-  { id: 3, name: "Đồ uống", description: "Nước uống đa dạng", icon: "🥤" },
-  { id: 4, name: "Món phụ", description: "Các món ăn kèm", icon: "🍟" },
-  {
-    id: 5,
-    name: "Tráng miệng",
-    description: "Món tráng miệng ngọt ngào",
-    icon: "🍰",
-  },
-  { id: 6, name: "Gà nướng", description: "Gà nướng thơm lừng", icon: "🍖" },
-  { id: 7, name: "Burger", description: "Burger đa dạng", icon: "🍔" },
-  { id: 8, name: "Pizza", description: "Pizza thơm ngon", icon: "🍕" },
-  { id: 9, name: "Mì Ý", description: "Mì Ý đậm đà", icon: "🍝" },
-  { id: 10, name: "Salad", description: "Salad tươi ngon", icon: "🥗" },
-  { id: 11, name: "Soup", description: "Soup nóng hổi", icon: "🍲" },
-  { id: 12, name: "Bánh mì", description: "Bánh mì giòn tan", icon: "🥖" },
-  { id: 13, name: "Bánh ngọt", description: "Bánh ngọt đa dạng", icon: "🧁" },
-  { id: 14, name: "Cà phê", description: "Cà phê đậm đà", icon: "☕" },
-  { id: 15, name: "Trà", description: "Trà thơm ngon", icon: "🍵" },
-];
+import useCategories from "../hooks/useCategories";
 
 export default function Categories() {
-  const [categories, setCategories] = useState(mockCategories);
+  const { categories, loading, createCategory, updateCategory, deleteCategory } = useCategories();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -64,29 +36,28 @@ export default function Categories() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (categoryToDelete) {
-      setCategories(categories.filter((c) => c.id !== categoryToDelete.id));
-      setDeleteDialogOpen(false);
-      setCategoryToDelete(null);
+      const success = await deleteCategory(categoryToDelete._id || categoryToDelete.id);
+      if (success) {
+        setDeleteDialogOpen(false);
+        setCategoryToDelete(null);
+      }
     }
   };
 
-  const handleSave = (categoryData) => {
-    if (categoryData.id) {
+  const handleSave = async (categoryData) => {
+    let success = false;
+    if (categoryData._id || categoryData.id) {
       // Update existing category
-      setCategories(
-        categories.map((c) =>
-          c.id === categoryData.id ? { ...c, ...categoryData } : c
-        )
-      );
+      success = await updateCategory(categoryData._id || categoryData.id, categoryData);
     } else {
       // Add new category
-      const newCategory = {
-        ...categoryData,
-        id: Math.max(...categories.map((c) => c.id), 0) + 1,
-      };
-      setCategories([...categories, newCategory]);
+      success = await createCategory(categoryData);
+    }
+    
+    if (success) {
+      setDialogOpen(false);
     }
   };
 
@@ -131,7 +102,13 @@ export default function Categories() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedCategories.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="4" className="px-4 lg:px-6 py-12 text-center text-gray-500">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+              ) : paginatedCategories.length === 0 ? (
                 <tr>
                   <td
                     colSpan="4"
@@ -143,7 +120,7 @@ export default function Categories() {
               ) : (
                 paginatedCategories.map((category) => (
                   <tr
-                    key={category.id}
+                    key={category._id || category.id}
                     className="hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
@@ -214,7 +191,7 @@ export default function Categories() {
 
       {/* Category Dialog */}
       <CategoryDialog
-        key={selectedCategory?.id || "new"}
+        key={selectedCategory?._id || selectedCategory?.id || "new"}
         open={dialogOpen}
         onClose={() => {
           setDialogOpen(false);

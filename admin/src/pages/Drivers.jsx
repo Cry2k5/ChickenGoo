@@ -1,59 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Plus, MoreVertical, Edit, Trash2, Truck } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import DriverDialog from "../components/dialogs/DriverDialog";
+import { driverService } from "../services/driverService";
+import { toast } from "react-hot-toast";
 
-// Mock data
-let mockDrivers = [
-  {
-    id: 1,
-    branchId: 1,
-    branchName: "Chi nhánh Quận 1",
-    name: "Nguyễn Văn Tài",
-    phone: "0901111111",
-    status: "AVAILABLE",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: 2,
-    branchId: 1,
-    branchName: "Chi nhánh Quận 1",
-    name: "Trần Văn Lái",
-    phone: "0902222222",
-    status: "ON_DELIVERY",
-    createdAt: "2024-01-16",
-  },
-  {
-    id: 3,
-    branchId: 2,
-    branchName: "Chi nhánh Quận 2",
-    name: "Lê Văn Xe",
-    phone: "0903333333",
-    status: "AVAILABLE",
-    createdAt: "2024-01-17",
-  },
-];
-
-// Mock branches
+// Mock branches for dialog (keep for now as we don't have branchService yet)
 const mockBranches = [
   { id: 1, name: "Chi nhánh Quận 1" },
   { id: 2, name: "Chi nhánh Quận 2" },
 ];
 
+// Mock data
 export default function Drivers() {
-  const [drivers, setDrivers] = useState(mockDrivers);
+  const [drivers, setDrivers] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [driverToDelete, setDriverToDelete] = useState(null);
 
+  // Fetch drivers
+  const fetchDrivers = async () => {
+    setLoading(true);
+    try {
+      const data = await driverService.getAll();
+      setDrivers(data.data || data); // Adjust based on API response structure
+    } catch (error) {
+      console.error("Failed to fetch drivers:", error);
+      toast.error("Không thể tải danh sách tài xế");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDrivers();
+  }, []);
+
   const filteredDrivers = drivers.filter(
     (driver) =>
       driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       driver.phone.includes(searchTerm) ||
-      driver.branchName?.toLowerCase().includes(searchTerm.toLowerCase())
+      driver.branch?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAdd = () => {
@@ -71,38 +62,35 @@ export default function Drivers() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (driverToDelete) {
-      setDrivers(drivers.filter((d) => d.id !== driverToDelete.id));
+      try {
+        await driverService.delete(driverToDelete.id);
+        toast.success("Xóa tài xế thành công");
+        fetchDrivers();
+      } catch (error) {
+        console.error("Failed to delete driver:", error);
+        toast.error("Xóa tài xế thất bại");
+      }
       setDeleteDialogOpen(false);
       setDriverToDelete(null);
     }
   };
 
-  const handleSave = (driverData) => {
-    const branch = mockBranches.find(
-      (b) => b.id === parseInt(driverData.branchId)
-    );
-    if (driverData.id) {
-      setDrivers(
-        drivers.map((d) =>
-          d.id === driverData.id
-            ? {
-                ...d,
-                ...driverData,
-                branchName: branch?.name || "",
-              }
-            : d
-        )
-      );
-    } else {
-      const newDriver = {
-        ...driverData,
-        id: Math.max(...drivers.map((d) => d.id), 0) + 1,
-        branchName: branch?.name || "",
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setDrivers([...drivers, newDriver]);
+  const handleSave = async (driverData) => {
+    try {
+      if (driverData.id) {
+        await driverService.update(driverData.id, driverData);
+        toast.success("Cập nhật tài xế thành công");
+      } else {
+        await driverService.create(driverData);
+        toast.success("Thêm tài xế thành công");
+      }
+      fetchDrivers();
+      setDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to save driver:", error);
+      toast.error("Lưu tài xế thất bại");
     }
   };
 
@@ -209,13 +197,13 @@ export default function Drivers() {
                             {driver.name}
                           </div>
                           <div className="text-xs text-gray-400 md:hidden mt-1">
-                            {driver.branchName}
+                            {driver.branch?.name}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                      <div className="text-sm text-gray-900">{driver.branchName}</div>
+                      <div className="text-sm text-gray-900">{driver.branch?.name}</div>
                     </td>
                     <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{driver.phone}</div>

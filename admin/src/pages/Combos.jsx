@@ -4,88 +4,14 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import ComboDialog from "../components/dialogs/ComboDialog";
 
-// Mock products - trong thực tế sẽ lấy từ API hoặc context
-const mockProducts = [
-  { id: 1, name: "Gà rán giòn cay", price: 89000, image: "https://via.placeholder.com/400" },
-  { id: 2, name: "Gà rán không cay", price: 89000, image: "https://via.placeholder.com/400" },
-  { id: 3, name: "Khoai tây chiên", price: 45000, image: "https://via.placeholder.com/400" },
-  { id: 4, name: "Coca Cola", price: 25000, image: "https://via.placeholder.com/400" },
-  { id: 5, name: "Pepsi", price: 25000, image: "https://via.placeholder.com/400" },
-  { id: 6, name: "Kem vani", price: 35000, image: "https://via.placeholder.com/400" },
-  { id: 7, name: "Gà rán sốt BBQ", price: 95000, image: "https://via.placeholder.com/400" },
-  { id: 8, name: "Gà rán sốt mật ong", price: 98000, image: "https://via.placeholder.com/400" },
-  { id: 9, name: "Cánh gà rán", price: 75000, image: "https://via.placeholder.com/400" },
-  { id: 10, name: "Đùi gà rán", price: 85000, image: "https://via.placeholder.com/400" },
-  { id: 11, name: "7Up", price: 25000, image: "https://via.placeholder.com/400" },
-  { id: 12, name: "Sprite", price: 25000, image: "https://via.placeholder.com/400" },
-  { id: 13, name: "Nước cam ép", price: 30000, image: "https://via.placeholder.com/400" },
-  { id: 14, name: "Bánh mì gà", price: 35000, image: "https://via.placeholder.com/400" },
-  { id: 15, name: "Salad rau củ", price: 40000, image: "https://via.placeholder.com/400" },
-  { id: 16, name: "Kem chocolate", price: 35000, image: "https://via.placeholder.com/400" },
-  { id: 17, name: "Kem dâu", price: 35000, image: "https://via.placeholder.com/400" },
-  { id: 18, name: "Bánh flan", price: 30000, image: "https://via.placeholder.com/400" },
-];
-
-// Mock data
-let mockCombos = [
-  {
-    id: 1,
-    name: "Combo Gia Đình",
-    categoryId: 2,
-    category: "Combo",
-    price: 199000,
-    desc: "2 miếng gà rán + 2 khoai tây chiên + 2 đồ uống",
-    image: "https://via.placeholder.com/400",
-    comboItems: [
-      { productId: 1, productName: "Gà rán giòn cay", quantity: 2 },
-      { productId: 3, productName: "Khoai tây chiên", quantity: 2 },
-      { productId: 4, productName: "Coca Cola", quantity: 2 },
-    ],
-    createdAt: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Combo Đôi",
-    categoryId: 2,
-    category: "Combo",
-    price: 149000,
-    desc: "2 miếng gà rán + 1 khoai tây chiên + 2 đồ uống",
-    image: "https://via.placeholder.com/400",
-    comboItems: [
-      { productId: 2, productName: "Gà rán không cay", quantity: 2 },
-      { productId: 3, productName: "Khoai tây chiên", quantity: 1 },
-      { productId: 5, productName: "Pepsi", quantity: 2 },
-    ],
-    createdAt: "2024-01-16",
-  },
-  {
-    id: 3,
-    name: "Combo Cá Nhân",
-    categoryId: 2,
-    category: "Combo",
-    price: 99000,
-    desc: "1 miếng gà rán + 1 khoai tây chiên + 1 đồ uống",
-    image: "https://via.placeholder.com/400",
-    comboItems: [
-      { productId: 1, productName: "Gà rán giòn cay", quantity: 1 },
-      { productId: 3, productName: "Khoai tây chiên", quantity: 1 },
-      { productId: 4, productName: "Coca Cola", quantity: 1 },
-    ],
-    createdAt: "2024-01-17",
-  },
-];
-
-// Mock categories
-const mockCategories = [
-  { id: 1, name: "Gà rán" },
-  { id: 2, name: "Combo" },
-  { id: 3, name: "Đồ uống" },
-  { id: 4, name: "Món phụ" },
-  { id: 5, name: "Tráng miệng" },
-];
+import useCombos from "../hooks/useCombos";
+import useCategories from "../hooks/useCategories";
+import useProducts from "../hooks/useProducts";
 
 export default function Combos() {
-  const [combos, setCombos] = useState(mockCombos);
+  const { combos, loading, createCombo, updateCombo, deleteCombo } = useCombos();
+  const { categories } = useCategories();
+  const { products } = useProducts();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCombo, setSelectedCombo] = useState(null);
@@ -95,8 +21,8 @@ export default function Combos() {
   const filteredCombos = combos.filter(
     (combo) =>
       combo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (combo.category &&
-        combo.category.toLowerCase().includes(searchTerm.toLowerCase()))
+      (combo.category?.name &&
+        combo.category.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleAdd = () => {
@@ -114,40 +40,26 @@ export default function Combos() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (comboToDelete) {
-      setCombos(combos.filter((c) => c.id !== comboToDelete.id));
-      setDeleteDialogOpen(false);
-      setComboToDelete(null);
+      const success = await deleteCombo(comboToDelete.id);
+      if (success) {
+        setDeleteDialogOpen(false);
+        setComboToDelete(null);
+      }
     }
   };
 
-  const handleSave = (comboData) => {
-    const category = mockCategories.find(
-      (c) => c.id === parseInt(comboData.categoryId)
-    );
+  const handleSave = async (comboData) => {
+    let success = false;
     if (comboData.id) {
-      setCombos(
-        combos.map((c) =>
-          c.id === comboData.id
-            ? {
-                ...c,
-                ...comboData,
-                price: parseInt(comboData.price),
-                category: category?.name || "",
-              }
-            : c
-        )
-      );
+      success = await updateCombo(comboData.id, comboData);
     } else {
-      const newCombo = {
-        ...comboData,
-        id: Math.max(...combos.map((c) => c.id), 0) + 1,
-        price: parseInt(comboData.price),
-        category: category?.name || "",
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setCombos([...combos, newCombo]);
+      success = await createCombo(comboData);
+    }
+    
+    if (success) {
+      setDialogOpen(false);
     }
   };
 
@@ -250,7 +162,7 @@ export default function Combos() {
                 <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
                   {combo.name}
                 </h3>
-                <p className="text-sm text-gray-500 mb-3">{combo.category}</p>
+                <p className="text-sm text-gray-500 mb-3">{combo.category?.name}</p>
                 <div>
                   <p className="text-lg font-bold text-gray-900">
                     {formatPrice(combo.price)}
@@ -276,8 +188,8 @@ export default function Combos() {
           setSelectedCombo(null);
         }}
         combo={selectedCombo}
-        categories={mockCategories}
-        products={mockProducts}
+        categories={categories}
+        products={products}
         onSave={handleSave}
       />
 
