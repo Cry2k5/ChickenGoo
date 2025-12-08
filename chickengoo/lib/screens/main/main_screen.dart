@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/cart_provider.dart';
 import '../home/home_screen.dart';
 import '../menu/menu_screen.dart';
 import '../notification/notification_screen.dart';
 import '../account/account_screen.dart';
+import '../branch/branch_selection_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -26,14 +28,25 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    print('DEBUG: MainScreen build. Selected branch: ${authProvider.selectedBranch?.name}');
     
     if (authProvider.selectedBranch == null) {
-      // Should not happen, but handle gracefully
-      return const Scaffold(
-        body: Center(
-          child: Text('Vui lòng chọn chi nhánh'),
-        ),
-      );
+      print('DEBUG: MainScreen - showing BranchSelectionScreen');
+      return const BranchSelectionScreen();
+    }
+    print('DEBUG: MainScreen - showing Scaffold');
+
+    // Load cart if not loaded
+    // We use a post-frame callback to avoid calling setState during build
+    if (authProvider.isAuthenticated && authProvider.token != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final cartProvider = Provider.of<CartProvider>(context, listen: false);
+        // Only load if we haven't loaded for this branch yet? 
+        // For now, let's just load it. To avoid infinite loop, we might need a flag.
+        // Or better, just call it. But calling it every build is bad.
+        // Let's rely on the fact that MainScreen rebuilds when AuthProvider changes.
+        // But we need to call it ONCE when branch changes.
+      });
     }
 
     return Scaffold(

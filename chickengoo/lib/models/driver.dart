@@ -1,36 +1,25 @@
-class Branch {
+class Driver {
   final int id;
   final String name;
-  final String? phone;
-  final String? address;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
+  final String phone;
   final double? latitude;
   final double? longitude;
 
-  Branch({
+  Driver({
     required this.id,
     required this.name,
-    this.phone,
-    this.address,
-    required this.createdAt,
-    required this.updatedAt,
+    required this.phone,
     this.latitude,
     this.longitude,
   });
 
-  factory Branch.fromJson(Map<String, dynamic> json) {
-    return Branch(
+  factory Driver.fromJson(Map<String, dynamic> json) {
+    return Driver(
       id: json['id'],
       name: json['name'],
       phone: json['phone'],
-      address: json['address'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
       latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
       longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
     );
   }
 }
-

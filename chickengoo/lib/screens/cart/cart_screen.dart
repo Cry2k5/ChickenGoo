@@ -2,10 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../checkout/checkout_screen.dart';
 
-class CartScreen extends StatelessWidget {
+class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
+
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresh cart when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+      if (authProvider.isAuthenticated && authProvider.selectedBranch != null && authProvider.token != null) {
+        print('DEBUG: CartScreen - Loading cart for branch ${authProvider.selectedBranch!.id}');
+        cartProvider.loadCart(authProvider.selectedBranch!.id, authProvider.token!);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,6 +162,7 @@ class _CartItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -158,11 +179,35 @@ class _CartItemCard extends StatelessWidget {
                     : Colors.amber.shade50,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Center(
-                child: Text(
-                  item.image ?? '🍗',
-                  style: const TextStyle(fontSize: 40),
-                ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: item.image != null && item.image!.isNotEmpty
+                    ? Image.network(
+                        item.image!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(
+                              Icons.fastfood,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          );
+                        },
+                      )
+                    : const Center(
+                        child: Icon(
+                          Icons.fastfood,
+                          size: 40,
+                          color: Colors.grey,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(width: 12),
@@ -217,7 +262,7 @@ class _CartItemCard extends StatelessWidget {
                   children: [
                     IconButton(
                       onPressed: () {
-                        cartProvider.updateQuantity(index, item.quantity - 1);
+                        cartProvider.updateQuantity(index, item.quantity - 1, token: authProvider.token);
                       },
                       icon: const Icon(Icons.remove_circle_outline),
                       iconSize: 24,
@@ -235,7 +280,7 @@ class _CartItemCard extends StatelessWidget {
                     ),
                     IconButton(
                       onPressed: () {
-                        cartProvider.updateQuantity(index, item.quantity + 1);
+                        cartProvider.updateQuantity(index, item.quantity + 1, token: authProvider.token);
                       },
                       icon: const Icon(Icons.add_circle_outline),
                       iconSize: 24,
@@ -255,7 +300,7 @@ class _CartItemCard extends StatelessWidget {
             const SizedBox(width: 8),
             IconButton(
               onPressed: () {
-                cartProvider.removeItem(index);
+                cartProvider.removeItem(index, token: authProvider.token);
               },
               icon: const Icon(Icons.delete_outline),
               color: Colors.red,

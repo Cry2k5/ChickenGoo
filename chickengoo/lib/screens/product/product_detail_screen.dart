@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/product.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -39,10 +40,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 color: Colors.amber.shade50,
               ),
               child: Center(
-                child: Text(
-                  widget.product.image ?? '🍗',
-                  style: const TextStyle(fontSize: 120),
-                ),
+                child: widget.product.image != null && widget.product.image!.isNotEmpty
+                    ? Image.network(
+                        widget.product.image!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(Icons.broken_image, size: 100),
+                          );
+                        },
+                      )
+                    : const Center(
+                        child: Text(
+                          '🍗',
+                          style: TextStyle(fontSize: 120),
+                        ),
+                      ),
               ),
             ),
             // Product Info
@@ -150,15 +165,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: () {
-                        cartProvider.addProduct(widget.product,
-                            quantity: _quantity);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Đã thêm vào giỏ hàng!'),
-                            backgroundColor: Colors.green,
-                          ),
+                      onPressed: () async {
+                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                        await cartProvider.addProduct(
+                          widget.product,
+                          quantity: _quantity,
+                          branchId: authProvider.selectedBranch?.id,
+                          token: authProvider.token,
                         );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Đã thêm vào giỏ hàng'),
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red.shade700,

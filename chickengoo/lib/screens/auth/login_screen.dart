@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/user.dart';
 import '../branch/branch_selection_screen.dart';
+import '../main/main_screen.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -36,35 +37,38 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
+    // Call API
+    try {
+      await Provider.of<AuthProvider>(context, listen: false)
+          .login(_phoneController.text, _passwordController.text);
 
-    // Fake login - in real app, call API
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final user = User(
-      id: 1,
-      name: 'Nguyễn Văn A',
-      email: 'user@example.com',
-      phone: _phoneController.text,
-      role: Role.CUSTOMER,
-      address: '123 Đường ABC',
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+      // Navigation is handled in finally block
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
 
-    authProvider.login(user);
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const BranchSelectionScreen(),
-        ),
-      );
+        if (Provider.of<AuthProvider>(context, listen: false).isAuthenticated) {
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MainScreen()),
+            );
+          }
+        }
+      }
     }
   }
 

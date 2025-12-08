@@ -27,7 +27,9 @@ class Product {
     return Product(
       id: json['id'],
       categoryId: json['categoryId'],
-      category: Category.fromJson(json['category']),
+      category: json['category'] != null 
+          ? Category.fromJson(json['category']) 
+          : Category(id: 0, name: 'Unknown'),
       name: json['name'],
       price: json['price'],
       desc: json['desc'],

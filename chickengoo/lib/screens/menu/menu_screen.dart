@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../services/fake_data_service.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import '../../services/api_service.dart';
 import '../../models/category.dart';
 import '../../models/product.dart';
 import '../../models/combo.dart';
@@ -18,11 +21,12 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  final FakeDataService _dataService = FakeDataService();
+  final ApiService _apiService = ApiService();
   int? _selectedCategoryId;
   List<Product> _products = [];
   List<Combo> _combos = [];
   List<Category> _categories = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -30,30 +34,57 @@ class _MenuScreenState extends State<MenuScreen> {
     _loadData();
   }
 
-  void _loadData() {
+  Future<void> _loadData() async {
     setState(() {
-      _categories = _dataService.getCategories();
-      if (_selectedCategoryId == null) {
-        _products = _dataService.getProducts();
-        _combos = _dataService.getCombos();
-      } else {
-        _products = _dataService.getProductsByCategory(_selectedCategoryId!);
-        _combos = _dataService.getCombosByCategory(_selectedCategoryId!);
-      }
+      _isLoading = true;
     });
+    try {
+      final categories = await _apiService.getCategories();
+      final products = await _apiService.getProducts(categoryId: _selectedCategoryId);
+      final combos = await _apiService.getCombos(categoryId: _selectedCategoryId);
+      
+      if (mounted) {
+        setState(() {
+          _categories = categories;
+          _products = products;
+          _combos = combos;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading menu data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
-  void _filterByCategory(int? categoryId) {
+  Future<void> _filterByCategory(int? categoryId) async {
     setState(() {
       _selectedCategoryId = categoryId;
-      if (categoryId == null) {
-        _products = _dataService.getProducts();
-        _combos = _dataService.getCombos();
-      } else {
-        _products = _dataService.getProductsByCategory(categoryId);
-        _combos = _dataService.getCombosByCategory(categoryId);
-      }
+      _isLoading = true;
     });
+    try {
+      final products = await _apiService.getProducts(categoryId: categoryId);
+      final combos = await _apiService.getCombos(categoryId: categoryId);
+      
+      if (mounted) {
+        setState(() {
+          _products = products;
+          _combos = combos;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error filtering menu data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -109,100 +140,170 @@ class _MenuScreenState extends State<MenuScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Categories
-          Container(
-            height: 70,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: ListView(
-              scrollDirection: Axis.horizontal,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
               children: [
-                _CategoryChip(
-                  category: Category(id: 0, name: 'Tất cả'),
-                  isSelected: _selectedCategoryId == null,
-                  onTap: () => _filterByCategory(null),
-                ),
-                ..._categories.map(
-                  (category) => _CategoryChip(
-                    category: category,
-                    isSelected: _selectedCategoryId == category.id,
-                    onTap: () => _filterByCategory(category.id),
+                // Categories
+                Container(
+                  height: 70,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _CategoryChip(
+                        category: Category(id: 0, name: 'Tất cả'),
+                        isSelected: _selectedCategoryId == null,
+                        onTap: () => _filterByCategory(null),
+                      ),
+                      ..._categories.map(
+                        (category) => _CategoryChip(
+                          category: category,
+                          isSelected: _selectedCategoryId == category.id,
+                          onTap: () => _filterByCategory(category.id),
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                // Products and Combos
+                Expanded(
+                  child: _products.isEmpty && _combos.isEmpty
+                      ? const Center(
+                          child: Text('Không có sản phẩm nào'),
+                        )
+                      : ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            // Combos Section
+                            if (_combos.isNotEmpty) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.star, color: Colors.orange),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Combo Siêu Hời',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.orange,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ..._combos.map(
+                                (combo) => _ComboCard(
+                                  combo: combo,
+                                  currencyFormat: currencyFormat,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ComboDetailScreen(
+                                          combo: combo,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                            // Products Section
+                            if (_selectedCategoryId != null) ...[
+                              // Single Category View
+                              if (_products.isNotEmpty) ...[
+                                const Text(
+                                  'Món ăn',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                ..._products.map(
+                                  (product) => _ProductCard(
+                                    product: product,
+                                    currencyFormat: currencyFormat,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              ProductDetailScreen(
+                                            product: product,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ] else ...[
+                              // All Categories View (Grouped)
+                              ..._buildGroupedProducts(context, currencyFormat),
+                            ],
+                          ],
+                        ),
                 ),
               ],
             ),
-          ),
-          // Products and Combos
-          Expanded(
-            child: _products.isEmpty && _combos.isEmpty
-                ? const Center(
-                    child: Text('Không có sản phẩm nào'),
-                  )
-                : ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      // Combos Section
-                      if (_combos.isNotEmpty) ...[
-                        const Text(
-                          'Combo',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        ..._combos.map(
-                          (combo) => _ComboCard(
-                            combo: combo,
-                            currencyFormat: currencyFormat,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ComboDetailScreen(
-                                    combo: combo,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-                      // Products Section
-                      if (_products.isNotEmpty) ...[
-                        const Text(
-                          'Món ăn',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        ..._products.map(
-                          (product) => _ProductCard(
-                            product: product,
-                            currencyFormat: currencyFormat,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ProductDetailScreen(
-                                    product: product,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-          ),
-        ],
-      ),
     );
+  }
+  List<Widget> _buildGroupedProducts(
+      BuildContext context, NumberFormat currencyFormat) {
+    List<Widget> widgets = [];
+    
+    // Group products by category
+    Map<String, List<Product>> groupedProducts = {};
+    for (var product in _products) {
+      if (!groupedProducts.containsKey(product.category.name)) {
+        groupedProducts[product.category.name] = [];
+      }
+      groupedProducts[product.category.name]!.add(product);
+    }
+
+    // Create widgets for each group
+    groupedProducts.forEach((categoryName, products) {
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12, top: 12),
+          child: Text(
+            categoryName,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          ),
+        ),
+      );
+      widgets.addAll(
+        products.map(
+          (product) => _ProductCard(
+            product: product,
+            currencyFormat: currencyFormat,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProductDetailScreen(
+                    product: product,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      widgets.add(const SizedBox(height: 12));
+    });
+
+    return widgets;
   }
 }
 
@@ -268,11 +369,24 @@ class _ProductCard extends StatelessWidget {
                   color: Colors.amber.shade50,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Center(
-                  child: Text(
-                    product.image ?? '🍗',
-                    style: const TextStyle(fontSize: 40),
-                  ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: product.image != null && product.image!.isNotEmpty
+                      ? Image.network(
+                          product.image!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(Icons.broken_image, size: 40),
+                            );
+                          },
+                        )
+                      : const Center(
+                          child: Text(
+                            '🍗',
+                            style: TextStyle(fontSize: 40),
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -348,11 +462,24 @@ class _ComboCard extends StatelessWidget {
                   color: Colors.orange.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Center(
-                  child: Text(
-                    combo.image ?? '🍱',
-                    style: const TextStyle(fontSize: 40),
-                  ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: combo.image != null && combo.image!.isNotEmpty
+                      ? Image.network(
+                          combo.image!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(Icons.broken_image, size: 40),
+                            );
+                          },
+                        )
+                      : const Center(
+                          child: Text(
+                            '🍱',
+                            style: TextStyle(fontSize: 40),
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(width: 12),

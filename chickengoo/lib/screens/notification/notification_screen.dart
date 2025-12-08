@@ -1,13 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../services/fake_data_service.dart';
+import '../../models/notification.dart' as model;
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final notifications = FakeDataService().getNotifications();
+    final notifications = [
+      model.Notification(
+        id: 1,
+        title: 'Khuyến mãi 50%',
+        message: 'Giảm giá 50% cho tất cả các đơn hàng trong ngày hôm nay',
+        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+        isRead: false,
+      ),
+      model.Notification(
+        id: 2,
+        title: 'Đơn hàng đã giao',
+        message: 'Đơn hàng #100001 của bạn đã được giao thành công',
+        createdAt: DateTime.now().subtract(const Duration(days: 1)),
+        isRead: true,
+      ),
+    ];
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
     return Scaffold(

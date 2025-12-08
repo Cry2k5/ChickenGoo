@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/user.dart';
 import '../branch/branch_selection_screen.dart';
+import '../main/main_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -41,35 +42,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _isLoading = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Fake register - in real app, call API
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final user = User(
-      id: 1,
-      name: _nameController.text,
-      email: _emailController.text,
-      phone: _phoneController.text,
-      role: Role.CUSTOMER,
-      address: null,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    authProvider.login(user);
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const BranchSelectionScreen(),
-        ),
+    // Call API
+    try {
+      await Provider.of<AuthProvider>(context, listen: false).register(
+        _nameController.text,
+        _phoneController.text,
+        _emailController.text,
+        _passwordController.text,
       );
+
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

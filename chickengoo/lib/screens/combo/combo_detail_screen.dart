@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/combo.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class ComboDetailScreen extends StatefulWidget {
   final Combo combo;
@@ -39,10 +40,24 @@ class _ComboDetailScreenState extends State<ComboDetailScreen> {
                 color: Colors.orange.shade50,
               ),
               child: Center(
-                child: Text(
-                  widget.combo.image ?? '🍱',
-                  style: const TextStyle(fontSize: 120),
-                ),
+                child: widget.combo.image != null && widget.combo.image!.isNotEmpty
+                    ? Image.network(
+                        widget.combo.image!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(Icons.broken_image, size: 100),
+                          );
+                        },
+                      )
+                    : const Center(
+                        child: Text(
+                          '🍱',
+                          style: TextStyle(fontSize: 120),
+                        ),
+                      ),
               ),
             ),
             // Combo Info
@@ -208,14 +223,22 @@ class _ComboDetailScreenState extends State<ComboDetailScreen> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: () {
-                        cartProvider.addCombo(widget.combo, quantity: _quantity);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Đã thêm vào giỏ hàng!'),
-                            backgroundColor: Colors.green,
-                          ),
+                      onPressed: () async {
+                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                        await cartProvider.addCombo(
+                          widget.combo,
+                          quantity: _quantity,
+                          branchId: authProvider.selectedBranch?.id,
+                          token: authProvider.token,
                         );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Đã thêm combo vào giỏ hàng'),
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red.shade700,
