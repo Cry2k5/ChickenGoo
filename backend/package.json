@@ -27,7 +27,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.10",
-    "prisma": "^5.19.1"
+    "prisma": "^5.19.1",
+    "prisma-erd-generator": "^2.3.0"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

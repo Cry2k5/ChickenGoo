@@ -93,6 +93,8 @@ CREATE TABLE "drivers" (
     "phone" TEXT NOT NULL,
     "password_hash" TEXT NOT NULL,
     "status" "statusDriver" NOT NULL DEFAULT 'AVAILABLE',
+    "latitude" DOUBLE PRECISION,
+    "longitude" DOUBLE PRECISION,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

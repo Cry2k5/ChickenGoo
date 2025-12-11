@@ -80,61 +80,201 @@ async function main() {
   });
 
   // ----------- CATEGORIES -----------
-  const catFood = await prisma.category.create({
-    data: { name: "Fast Food" },
+  const catChicken = await prisma.category.create({
+    data: { name: "Chicken" },
+  });
+  const catSides = await prisma.category.create({ data: { name: "Sides" } });
+  const catDrinks = await prisma.category.create({ data: { name: "Drinks" } });
+  const catDesserts = await prisma.category.create({
+    data: { name: "Desserts" },
   });
 
-  const catDrink = await prisma.category.create({
-    data: { name: "Beverages" },
-  });
-
-  // ----------- PRODUCTS -----------
-  const burger = await prisma.product.create({
+  // ----------- CHICKEN -----------
+  const friedChicken = await prisma.product.create({
     data: {
-      categoryId: catFood.id,
-      name: "Burger",
+      categoryId: catChicken.id,
+      name: "Gà rán truyền thống",
+      price: 70000,
+      desc: "Gà rán giòn rụm, thơm ngon",
+      image: null,
+    },
+  });
+  const spicyChicken = await prisma.product.create({
+    data: {
+      categoryId: catChicken.id,
+      name: "Gà rán cay",
+      price: 75000,
+      desc: "Gà rán cay nồng, hấp dẫn",
+      image: null,
+    },
+  });
+  const chickenWings = await prisma.product.create({
+    data: {
+      categoryId: catChicken.id,
+      name: "Cánh gà rán",
+      price: 60000,
+      desc: "Cánh gà giòn, sốt đặc biệt",
+      image: null,
+    },
+  });
+  const chickenThigh = await prisma.product.create({
+    data: {
+      categoryId: catChicken.id,
+      name: "Đùi gà rán",
+      price: 80000,
+      desc: "Đùi gà to, giòn rụm",
+      image: null,
+    },
+  });
+  const chickenPopcorn = await prisma.product.create({
+    data: {
+      categoryId: catChicken.id,
+      name: "Gà popcorn",
       price: 50000,
-      desc: "Burger thơm ngon",
+      desc: "Gà chiên nhỏ, giòn tan",
       image: null,
     },
   });
-
-  const pizza = await prisma.product.create({
+  const chickenBurger = await prisma.product.create({
     data: {
-      categoryId: catFood.id,
-      name: "Pizza",
-      price: 120000,
-      desc: "Pizza thượng hạng",
+      categoryId: catChicken.id,
+      name: "Burger gà rán",
+      price: 65000,
+      desc: "Burger kẹp gà rán giòn",
+      image: null,
+    },
+  });
+  const chickenWrap = await prisma.product.create({
+    data: {
+      categoryId: catChicken.id,
+      name: "Wrap gà rán",
+      price: 60000,
+      desc: "Bánh cuốn gà rán thơm ngon",
       image: null,
     },
   });
 
+  // ----------- SIDES -----------
+  const fries = await prisma.product.create({
+    data: {
+      categoryId: catSides.id,
+      name: "Khoai tây chiên",
+      price: 30000,
+      desc: "Khoai tây chiên giòn",
+      image: null,
+    },
+  });
+  const onionRings = await prisma.product.create({
+    data: {
+      categoryId: catSides.id,
+      name: "Hành tây chiên",
+      price: 25000,
+      desc: "Hành tây chiên giòn, thơm",
+      image: null,
+    },
+  });
+  const coleslaw = await prisma.product.create({
+    data: {
+      categoryId: catSides.id,
+      name: "Salad Coleslaw",
+      price: 20000,
+      desc: "Salad cải bắp tươi mát",
+      image: null,
+    },
+  });
+
+  // ----------- DRINKS -----------
   const coca = await prisma.product.create({
     data: {
-      categoryId: catDrink.id,
+      categoryId: catDrinks.id,
       name: "Coca Cola",
       price: 20000,
       desc: "Nước ngọt Coca",
       image: null,
     },
   });
-
-  // ----------- COMBO -----------
-  const combo1 = await prisma.combo.create({
+  const pepsi = await prisma.product.create({
     data: {
-      categoryId: catFood.id,
-      name: "Combo Burger + Coca",
-      price: 65000,
-      desc: "Combo tiết kiệm",
+      categoryId: catDrinks.id,
+      name: "Pepsi",
+      price: 20000,
+      desc: "Nước ngọt Pepsi",
+      image: null,
+    },
+  });
+  const sprite = await prisma.product.create({
+    data: {
+      categoryId: catDrinks.id,
+      name: "Sprite",
+      price: 20000,
+      desc: "Nước ngọt Sprite",
+      image: null,
+    },
+  });
+  const fanta = await prisma.product.create({
+    data: {
+      categoryId: catDrinks.id,
+      name: "Fanta",
+      price: 20000,
+      desc: "Nước ngọt Fanta",
+      image: null,
+    },
+  });
+  const icedTea = await prisma.product.create({
+    data: {
+      categoryId: catDrinks.id,
+      name: "Trà đá",
+      price: 15000,
+      desc: "Trà đá mát lạnh",
       image: null,
     },
   });
 
-  await prisma.comboItem.createMany({
-    data: [
-      { comboId: combo1.id, productId: burger.id, quantity: 1 },
-      { comboId: combo1.id, productId: coca.id, quantity: 1 },
-    ],
+  // ----------- DESSERTS -----------
+  const iceCream = await prisma.product.create({
+    data: {
+      categoryId: catDesserts.id,
+      name: "Kem vani",
+      price: 25000,
+      desc: "Kem vani mát lạnh",
+      image: null,
+    },
+  });
+  const pudding = await prisma.product.create({
+    data: {
+      categoryId: catDesserts.id,
+      name: "Pudding socola",
+      price: 30000,
+      desc: "Pudding mềm mịn, thơm ngon",
+      image: null,
+    },
+  });
+  const brownie = await prisma.product.create({
+    data: {
+      categoryId: catDesserts.id,
+      name: "Brownie",
+      price: 35000,
+      desc: "Brownie socola đậm đà",
+      image: null,
+    },
+  });
+  const cheesecake = await prisma.product.create({
+    data: {
+      categoryId: catDesserts.id,
+      name: "Cheesecake",
+      price: 40000,
+      desc: "Bánh phô mai béo ngậy",
+      image: null,
+    },
+  });
+  const donut = await prisma.product.create({
+    data: {
+      categoryId: catDesserts.id,
+      name: "Donut",
+      price: 25000,
+      desc: "Donut ngọt mềm, thơm ngon",
+      image: null,
+    },
   });
 
   // ----------- DRIVERS -----------
@@ -145,6 +285,8 @@ async function main() {
       phone: "0911111111",
       passwordHash,
       status: "AVAILABLE",
+      latitude: null,
+      longitude: null,
     },
   });
 
@@ -155,89 +297,10 @@ async function main() {
       phone: "0922222222",
       passwordHash,
       status: "AVAILABLE",
+      latitude: null,
+      longitude: null,
     },
   });
-
-  // ----------- CART -----------
-  const cart1 = await prisma.cart.create({
-    data: {
-      userId: userA.id,
-      branchId: branch1.id,
-      totalAmount: 0,
-    },
-  });
-
-  const cart2 = await prisma.cart.create({
-    data: {
-      userId: userB.id,
-      branchId: branch2.id,
-      totalAmount: 0,
-    },
-  });
-
-  // ----------- CART ITEMS -----------
-  await prisma.cartItem.createMany({
-    data: [
-      { cartId: cart1.id, productId: burger.id, quantity: 2, price: 50000 },
-      { cartId: cart1.id, comboId: combo1.id, quantity: 1, price: 65000 },
-      { cartId: cart2.id, productId: pizza.id, quantity: 1, price: 120000 },
-    ],
-  });
-
-  // Update total amount
-  async function updateCartTotal(cartId) {
-    const items = await prisma.cartItem.findMany({
-      where: { cartId },
-    });
-    const total = items.reduce((sum, i) => sum + i.quantity * i.price, 0);
-    await prisma.cart.update({
-      where: { id: cartId },
-      data: { totalAmount: total },
-    });
-  }
-
-  await updateCartTotal(cart1.id);
-  await updateCartTotal(cart2.id);
-
-  // ----------- ORDER -----------
-  const order1 = await prisma.order.create({
-    data: {
-      userId: userA.id,
-      branchId: branch1.id,
-      driverId: driver1.id,
-      totalAmount: 170000,
-      status: "ACCEPTED",
-      paymentMethod: "COD",
-      deliveryAddress: "123 đường ABC, Quận 1",
-      deliveryPhone: "0912345671",
-      latitude: 10.76,
-      longitude: 106.67,
-    },
-  });
-
-  await prisma.orderItem.createMany({
-    data: [
-      { orderId: order1.id, productId: burger.id, quantity: 2, price: 50000 },
-      { orderId: order1.id, comboId: combo1.id, quantity: 1, price: 65000 },
-    ],
-  });
-
-  // ----------- BILLS -----------
-  const bill1 = await prisma.bill.create({
-    data: {
-      userId: userA.id,
-      branchId: branch1.id,
-      totalPrice: 170000,
-    },
-  });
-
-  await prisma.billItem.createMany({
-    data: [
-      { billId: bill1.id, productId: burger.id, quantity: 2, price: 50000 },
-      { billId: bill1.id, productId: coca.id, quantity: 1, price: 20000 },
-    ],
-  });
-
   console.log("SEEDING DONE!");
 }
 
