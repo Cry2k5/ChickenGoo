@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import 'otp_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -28,20 +30,55 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _isLoading = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OTPScreen(phone: _phoneController.text),
-        ),
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      
+      await authProvider.verifyPhone(
+        _phoneController.text,
+        (verificationId) {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            
+            // Navigate to OTP Screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OTPScreen(
+                  phone: _phoneController.text,
+                  isRegistration: false,
+                ),
+              ),
+            );
+          }
+        },
+        (errorMessage) {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Lỗi xác thực: $errorMessage'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
       );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

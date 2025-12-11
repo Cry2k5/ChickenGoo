@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
+import 'reset_password_screen.dart';
 
 class OTPScreen extends StatefulWidget {
   final String phone;
+  final bool isRegistration;
+  final Map<String, dynamic>? registrationData;
 
-  const OTPScreen({super.key, required this.phone});
+  const OTPScreen({
+    super.key, 
+    required this.phone,
+    this.isRegistration = false,
+    this.registrationData,
+  });
 
   @override
   State<OTPScreen> createState() => _OTPScreenState();
@@ -50,21 +60,48 @@ class _OTPScreenState extends State<OTPScreen> {
       _isLoading = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.verifyOTP(otp);
 
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mật khẩu mới đã được gửi đến số điện thoại của bạn'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.popUntil(context, (route) => route.isFirst);
+      if (widget.isRegistration && widget.registrationData != null) {
+        // Proceed with registration
+        await authProvider.register(
+          widget.registrationData!['name'],
+          widget.registrationData!['phone'],
+          widget.registrationData!['email'],
+          widget.registrationData!['password'],
+        );
+        
+        if (mounted) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      } else {
+        // Proceed with password reset
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ResetPasswordScreen(phone: widget.phone),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

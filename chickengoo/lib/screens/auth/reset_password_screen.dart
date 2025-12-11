@@ -1,23 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../models/user.dart';
-import '../branch/branch_selection_screen.dart';
-import '../main/main_screen.dart';
-import 'otp_screen.dart';
+import '../auth/login_screen.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class ResetPasswordScreen extends StatefulWidget {
+  final String phone;
+
+  const ResetPasswordScreen({super.key, required this.phone});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
@@ -26,15 +22,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleRegister() async {
+  Future<void> _handleResetPassword() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -44,59 +37,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
-      await authProvider.verifyPhone(
-        _phoneController.text,
-        (verificationId) {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-            
-            // Navigate to OTP Screen
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => OTPScreen(
-                  phone: _phoneController.text,
-                  isRegistration: true,
-                  registrationData: {
-                    'name': _nameController.text,
-                    'phone': _phoneController.text,
-                    'email': _emailController.text,
-                    'password': _passwordController.text,
-                  },
-                ),
-              ),
-            );
-          }
-        },
-        (errorMessage) {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Lỗi xác thực: $errorMessage'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
+      await Provider.of<AuthProvider>(context, listen: false).resetPassword(
+        widget.phone,
+        _passwordController.text,
       );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      }
     } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Lỗi', style: TextStyle(color: Colors.red)),
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Đóng'),
+              ),
+            ],
+          ),
+        );
+      }
+    } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     }
   }
@@ -105,7 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Đăng ký'),
+        title: const Text('Đặt lại mật khẩu'),
         backgroundColor: Colors.red.shade700,
         foregroundColor: Colors.white,
       ),
@@ -117,77 +96,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 16),
+                const SizedBox(height: 32),
+                Icon(
+                  Icons.lock_reset,
+                  size: 80,
+                  color: Colors.red.shade700,
+                ),
+                const SizedBox(height: 24),
                 Text(
-                  'Tạo tài khoản mới',
+                  'Đặt lại mật khẩu',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.grey.shade800,
                   ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                // Name Field
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Họ và tên',
-                    prefixIcon: Icon(Icons.person),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Vui lòng nhập họ và tên';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Email Field
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Vui lòng nhập email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Email không hợp lệ';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Phone Field
-                TextFormField(
-                  controller: _phoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'Số điện thoại',
-                    prefixIcon: Icon(Icons.phone),
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Vui lòng nhập số điện thoại';
-                    }
-                    if (value.length < 10) {
-                      return 'Số điện thoại không hợp lệ';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
                 // Password Field
                 TextFormField(
                   controller: _passwordController,
                   decoration: InputDecoration(
-                    labelText: 'Mật khẩu',
+                    labelText: 'Mật khẩu mới',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -206,7 +136,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: _obscurePassword,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Vui lòng nhập mật khẩu';
+                      return 'Vui lòng nhập mật khẩu mới';
                     }
                     if (value.length < 6) {
                       return 'Mật khẩu phải có ít nhất 6 ký tự';
@@ -247,11 +177,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 32),
-                // Register Button
+                // Reset Button
                 SizedBox(
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleRegister,
+                    onPressed: _isLoading ? null : _handleResetPassword,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red.shade700,
                       foregroundColor: Colors.white,
@@ -270,27 +200,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           )
                         : const Text(
-                            'Đăng ký',
+                            'Đặt lại mật khẩu',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                // Login Link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Đã có tài khoản? '),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Đăng nhập'),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -300,4 +216,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-

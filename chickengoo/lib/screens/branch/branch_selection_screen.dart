@@ -25,12 +25,49 @@ class BranchSelectionScreen extends StatelessWidget {
         future: apiService.getBranches(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
+            print('DEBUG: BranchSelectionScreen - Waiting for data...');
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Lỗi: ${snapshot.error}'));
+            print('DEBUG: BranchSelectionScreen - Error: ${snapshot.error}');
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Lỗi: ${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Trigger rebuild to retry
+                      (context as Element).markNeedsBuild();
+                    },
+                    child: const Text('Thử lại'),
+                  ),
+                ],
+              ),
+            );
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Không có chi nhánh nào'));
+            print('DEBUG: BranchSelectionScreen - No data or empty list');
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Không có chi nhánh nào'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      (context as Element).markNeedsBuild();
+                    },
+                    child: const Text('Tải lại'),
+                  ),
+                ],
+              ),
+            );
           }
+          print('DEBUG: BranchSelectionScreen - Loaded ${snapshot.data!.length} branches');
 
           final branches = snapshot.data!;
           return ListView.builder(
