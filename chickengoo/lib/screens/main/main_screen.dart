@@ -7,6 +7,7 @@ import '../menu/menu_screen.dart';
 import '../notification/notification_screen.dart';
 import '../account/account_screen.dart';
 import '../branch/branch_selection_screen.dart';
+import '../chat/chat_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -50,6 +51,16 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ChatScreen()),
+          );
+        },
+        backgroundColor: Colors.red.shade700,
+        child: const Icon(Icons.chat_bubble, color: Colors.white),
+      ),
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

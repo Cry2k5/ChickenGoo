@@ -21,13 +21,23 @@ class Branch {
   });
 
   factory Branch.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(String? dateStr) {
+      if (dateStr == null) return DateTime.now();
+      try {
+        return DateTime.parse(dateStr);
+      } catch (e) {
+        print('Error parsing date: $dateStr');
+        return DateTime.now();
+      }
+    }
+
     return Branch(
       id: json['id'],
       name: json['name'],
       phone: json['phone'],
       address: json['address'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      createdAt: parseDate(json['createdAt']),
+      updatedAt: parseDate(json['updatedAt']),
       latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
       longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
     );

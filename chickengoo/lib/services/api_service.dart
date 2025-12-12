@@ -56,6 +56,30 @@ class ApiService {
     throw Exception('Đăng ký thất bại: ${response.body}');
   }
 
+  Future<void> resetPassword(String phone, String newPassword, {String? token}) async {
+    final headers = {'Content-Type': 'application/json'};
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    final response = await http.post(
+      Uri.parse('${AppConstants.baseUrl}/user/auth/reset-password'),
+      headers: headers,
+      body: json.encode({
+        'phone': phone,
+        'newPassword': newPassword,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return;
+      }
+    }
+    throw Exception('Đặt lại mật khẩu thất bại: ${response.body}');
+  }
+
   Future<List<Product>> getProducts({int? categoryId}) async {
     String url = '${AppConstants.baseUrl}/products';
     if (categoryId != null) {
@@ -73,7 +97,9 @@ class ApiService {
   }
 
   Future<List<Category>> getCategories() async {
-    final response = await http.get(Uri.parse('${AppConstants.baseUrl}/categories'));
+    final response = await http
+        .get(Uri.parse('${AppConstants.baseUrl}/categories'))
+        .timeout(const Duration(seconds: 10));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data['success'] == true) {
@@ -293,7 +319,9 @@ class ApiService {
   }
 
   Future<List<Branch>> getBranches() async {
-    final response = await http.get(Uri.parse('${AppConstants.baseUrl}/branches'));
+    final response = await http
+        .get(Uri.parse('${AppConstants.baseUrl}/branches'))
+        .timeout(const Duration(seconds: 10));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data['success'] == true) {
